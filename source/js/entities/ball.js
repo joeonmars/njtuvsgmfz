@@ -18,7 +18,7 @@ var Ball = function( game, x, y, key, frame ) {
 	this.body.fixedRotation = true;
 	this.body.mass = 1;
 	this.body.damping = 0;
-	this.body.angularDamping = 0.8;
+	this.body.angularDamping = 1;
 };
 inherits( Ball, Phaser.Sprite );
 

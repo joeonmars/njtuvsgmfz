@@ -1,7 +1,8 @@
 var inherits = require( 'inherits' );
 var Ball = require( 'entities/ball' );
 var Player = require( 'entities/player' );
-var PlayersConfig = require( 'configs/players' );
+var PlayerConfig = require( 'configs/players' );
+var PlayerController = require( 'controllers/playercontroller' );
 
 
 var Playground = function() {
@@ -34,17 +35,24 @@ Playground.prototype.create = function() {
 	this.ball = new Ball( this.game, 600, 300, 'ball' );
 	this.world.add( this.ball );
 
-	var playerConfig = PlayersConfig[ 'ssz' ];
+	var playerConfig = PlayerConfig[ 'yxz' ];
 	var playerX = 500;
 	var playerY = 700 - this.physics.p2.mpx( playerConfig.height / 2 );
 	this.player = new Player( playerConfig, this.game, playerX, playerY );
 	this.world.add( this.player );
+
+	this.playerController = new PlayerController( this.input );
+	this.playerController.setPlayer( this.player );
 
 	this.net = this.add.sprite( 70, 120, 'net' );
 	this.physics.p2.enable( this.net, true );
 	this.net.body.static = true;
 	this.net.body.clearShapes();
 	this.net.body.loadPolygon( 'net', 'basketball-net-small' );
+
+	this.net.inputEnabled = true;
+	this.net.input.enableDrag();
+	this.net.events.onDragStart.add( this.onBasketDragStart, this );
 
 	this.backboard = this.add.sprite( 0, 0, 'backboard' );
 	this.physics.p2.enable( this.backboard, true );
@@ -63,6 +71,7 @@ Playground.prototype.create = function() {
 	this.floorBody.debug = true;
 
 	// materials
+	this.playerMaterial = this.physics.p2.createMaterial( 'player', this.player.body );
 	this.ballMaterial = this.physics.p2.createMaterial( 'ball', this.ball.body );
 	this.floorMaterial = this.physics.p2.createMaterial( 'floor', this.floorBody );
 	this.backboardMaterial = this.physics.p2.createMaterial( 'backboard', this.backboard.body );
@@ -77,8 +86,18 @@ Playground.prototype.create = function() {
 	this.ballVsBackboardMaterial = this.physics.p2.createContactMaterial( this.ballMaterial, this.backboardMaterial );
 	this.ballVsBackboardMaterial.restitution = 0.5;
 
+	this.playerVsFloorMaterial = this.physics.p2.createContactMaterial( this.playerMaterial, this.floorMaterial );
+	this.playerVsFloorMaterial.restitution = 0;
+	this.playerVsFloorMaterial.friction = 1;
+
+	this.playerVsBallMaterial = this.physics.p2.createContactMaterial( this.playerMaterial, this.ballMaterial );
+	this.playerVsBallMaterial.restitution = 0;
+	this.playerVsBallMaterial.friction = 1;
+
 	//
-	this.cursors = this.input.keyboard.createCursorKeys();
+	this.backboardDragOffset = null;
+	this.netDragOffset = null;
+
 	this.spacebarKey = this.input.keyboard.addKey( Phaser.Keyboard.SPACEBAR );
 	this.spacebarKey.onDown.add( this.shoot, this );
 };
@@ -90,45 +109,29 @@ Playground.prototype.shoot = function() {
 	targetPosition.y -= this.net.height / 2;
 
 	this.ball.shoot( targetPosition );
-}
-
-
-Playground.prototype.moveBasketGroup = function( dx, dy ) {
-
-	_.each( this.basketGroup.children, function( sprite ) {
-		sprite.body.setZeroVelocity();
-		sprite.body.moveLeft( dx );
-		sprite.body.moveUp( dy );
-	} );
-}
+};
 
 
 Playground.prototype.update = function() {
 
-	var dx = 0,
-		dy = 0;
+	if ( this.net.input.isDragged ) {
 
-	var velocity = this.physics.p2.mpx( 2 );
+		var worldX = this.input.activePointer.worldX;
+		var worldY = this.input.activePointer.worldY;
 
-	if ( this.cursors.left.isDown ) {
+		this.backboard.body.x = worldX + this.backboardDragOffset.x;
+		this.backboard.body.y = worldY + this.backboardDragOffset.y;
 
-		dx = velocity;
-
-	} else if ( this.cursors.right.isDown ) {
-
-		dx = -velocity;
+		this.net.body.x = worldX + this.netDragOffset.x;
+		this.net.body.y = worldY + this.netDragOffset.y;
 	}
+};
 
-	if ( this.cursors.up.isDown ) {
 
-		dy = velocity;
+Playground.prototype.onBasketDragStart = function( sprite, pointer, x, y ) {
 
-	} else if ( this.cursors.down.isDown ) {
-
-		dy = -velocity;
-	}
-
-	this.moveBasketGroup( dx, dy );
+	this.backboardDragOffset = new Phaser.Point( this.backboard.x - pointer.worldX, this.backboard.y - pointer.worldY );
+	this.netDragOffset = new Phaser.Point( this.net.x - pointer.worldX, this.net.y - pointer.worldY );
 };
 
 
