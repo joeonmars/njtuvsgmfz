@@ -1,0 +1,17 @@
+*.DS_Store
+*.sublime-workspace
+node_modules
+release
+Gemfile.lock
+source/node_modules
+source/.sass-cache
+source/js/views/*.js
+source/css/wkfp.css
+source/fonts/fontcustom/*.svg
+source/fonts/fontcustom/*.eot
+source/fonts/fontcustom/*.ttf
+source/fonts/fontcustom/*.woff
+source/output/
+/intro logos.psd
+/styleguide/
+/source/web.config

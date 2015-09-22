@@ -1,0 +1,17 @@
+	{ 
+		
+		"basketball-net-small": [
+			
+				{
+					"density": 2, "friction": 0, "bounce": 0, 
+					"filter": { "categoryBits": 1, "maskBits": 65535 },
+					"shape": [   17, 1  ,  17, 11  ,  1, 11  ,  1, 1  ]
+				}   ,
+				{
+					"density": 2, "friction": 0, "bounce": 0, 
+					"filter": { "categoryBits": 1, "maskBits": 65535 },
+					"shape": [   135, 1  ,  135, 11  ,  118, 11  ,  118, 1  ]
+				}  
+		]
+		
+	}
