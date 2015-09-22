@@ -1,10 +1,11 @@
 var inherits = require( 'inherits' );
 var Ball = require( 'entities/ball' );
+var Player = require( 'entities/player' );
+var PlayersConfig = require( 'configs/players' );
 
 
 var Playground = function() {
 
-	this.logo = null;
 	this.net = null;
 };
 inherits( Playground, Phaser.State );
@@ -18,7 +19,6 @@ Playground.prototype.init = function() {
 
 Playground.prototype.preload = function() {
 
-	this.load.image( 'logo', 'images/joeonmars.png' );
 	this.load.image( 'ball', 'images/ball.png' );
 	this.load.image( 'backboard', 'images/backboard.png' );
 	this.load.image( 'net', 'images/basketball-net-small.png' );
@@ -28,16 +28,19 @@ Playground.prototype.preload = function() {
 
 Playground.prototype.create = function() {
 
-	this.logo = this.add.sprite( this.world.centerX, this.world.centerY, 'logo' );
-	this.logo.anchor.set( .5, .5 );
-
 	//http://www.html5gamedevs.com/topic/4346-how-can-i-calculate-falling-time-when-effected-by-gravity/?hl=%2Bgravity+%2Bmeter#entry27001
 	this.physics.p2.gravity.y = this.physics.p2.mpx( 9.81 );
 
 	this.ball = new Ball( this.game, 600, 300, 'ball' );
 	this.world.add( this.ball );
 
-	this.net = this.add.sprite( 85, 130, 'net' );
+	var playerConfig = PlayersConfig[ 'ssz' ];
+	var playerX = 500;
+	var playerY = 700 - this.physics.p2.mpx( playerConfig.height / 2 );
+	this.player = new Player( playerConfig, this.game, playerX, playerY );
+	this.world.add( this.player );
+
+	this.net = this.add.sprite( 70, 120, 'net' );
 	this.physics.p2.enable( this.net, true );
 	this.net.body.static = true;
 	this.net.body.clearShapes();

@@ -10,11 +10,11 @@ var Ball = function( game, x, y, key, frame ) {
 
 	Phaser.Sprite.call( this, game, x, y, key, frame );
 
-	game.physics.p2.enable( this, true );
+	game.physics.enable( this, Phaser.Physics.P2JS );
 
-	this.width = this.height = game.physics.p2.mpx( 0.24 );
+	this.width = this.height = game.physics.p2.mpx( 0.25 );
 
-	this.body.setCircle( 24 );
+	this.body.setCircle( this.width / 2 );
 	this.body.fixedRotation = true;
 	this.body.mass = 1;
 	this.body.damping = 0;

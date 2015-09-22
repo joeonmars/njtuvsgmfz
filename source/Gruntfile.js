@@ -80,6 +80,10 @@ module.exports = function( grunt ) {
 							cwd: './js/controllers'
 						}, {
 							src: '**/*.js',
+							expose: 'configs',
+							cwd: './js/configs'
+						}, {
+							src: '**/*.js',
 							expose: 'states',
 							cwd: './js/states'
 						}, {

@@ -23,7 +23,7 @@ Boot.prototype.init = function() {
 
 	// A high school basketball court is 26m
 	// equivalent in pixels: 5200px
-	var pxPerMeter = 5200 / 26;
+	var pxPerMeter = 182;
 
 	this.physics.p2.mpx = function( v ) {
 		return v * pxPerMeter;
