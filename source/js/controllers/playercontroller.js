@@ -43,8 +43,8 @@ var PlayerController = function( input ) {
 	this._currentDirection = null;
 
 	this._holdingDirection = {};
-	this._holdingDirection[ PlayerController.Direction.LEFT ] = false;
-	this._holdingDirection[ PlayerController.Direction.RIGHT ] = false;
+	this._holdingDirection[ Phaser.LEFT ] = false;
+	this._holdingDirection[ Phaser.RIGHT ] = false;
 };
 
 
@@ -113,8 +113,8 @@ PlayerController.prototype.onDownLeft = function() {
 
 	console.log( 'down left' );
 
-	this._player.face( Player.Facing.LEFT );
-	this._currentDirection = PlayerController.Direction.LEFT;
+	this._player.face( Phaser.LEFT );
+	this._currentDirection = Phaser.LEFT;
 };
 
 
@@ -122,14 +122,14 @@ PlayerController.prototype.onUpLeft = function() {
 
 	console.log( 'up left' );
 
-	this._holdingDirection[ PlayerController.Direction.LEFT ] = false;
+	this._holdingDirection[ Phaser.LEFT ] = false;
 
-	if ( this._holdingDirection[ PlayerController.Direction.RIGHT ] ) {
+	if ( this._holdingDirection[ Phaser.RIGHT ] ) {
 
-		this._player.face( Player.Facing.RIGHT );
-		this._currentDirection = PlayerController.Direction.RIGHT;
+		this._player.face( Phaser.RIGHT );
+		this._currentDirection = Phaser.RIGHT;
 
-	} else if ( this._currentDirection === PlayerController.Direction.LEFT ) {
+	} else if ( this._currentDirection === Phaser.LEFT ) {
 
 		this._currentDirection = null;
 		this._player.setState( Player.State.STANCE );
@@ -141,9 +141,9 @@ PlayerController.prototype.onHoldLeft = function() {
 
 	console.log( 'hold left' );
 
-	this._holdingDirection[ PlayerController.Direction.LEFT ] = true;
+	this._holdingDirection[ Phaser.LEFT ] = true;
 
-	if ( this._currentDirection === PlayerController.Direction.LEFT ) {
+	if ( this._currentDirection === Phaser.LEFT ) {
 
 		this._player.setState( Player.State.WALKING );
 	}
@@ -157,9 +157,9 @@ PlayerController.prototype.onDownRight = function() {
 
 	console.log( 'down right' );
 
-	this._player.face( Player.Facing.RIGHT );
+	this._player.face( Phaser.RIGHT );
 
-	this._currentDirection = PlayerController.Direction.RIGHT;
+	this._currentDirection = Phaser.RIGHT;
 };
 
 
@@ -167,14 +167,14 @@ PlayerController.prototype.onUpRight = function() {
 
 	console.log( 'up right' );
 
-	this._holdingDirection[ PlayerController.Direction.RIGHT ] = false;
+	this._holdingDirection[ Phaser.RIGHT ] = false;
 
-	if ( this._holdingDirection[ PlayerController.Direction.LEFT ] ) {
+	if ( this._holdingDirection[ Phaser.LEFT ] ) {
 
-		this._player.face( Player.Facing.LEFT );
-		this._currentDirection = PlayerController.Direction.LEFT;
+		this._player.face( Phaser.LEFT );
+		this._currentDirection = Phaser.LEFT;
 
-	} else if ( this._currentDirection === PlayerController.Direction.RIGHT ) {
+	} else if ( this._currentDirection === Phaser.RIGHT ) {
 
 		this._currentDirection = null;
 		this._player.setState( Player.State.STANCE );
@@ -186,9 +186,9 @@ PlayerController.prototype.onHoldRight = function() {
 
 	console.log( 'hold right' );
 
-	this._holdingDirection[ PlayerController.Direction.RIGHT ] = true;
+	this._holdingDirection[ Phaser.RIGHT ] = true;
 
-	if ( this._currentDirection === PlayerController.Direction.RIGHT ) {
+	if ( this._currentDirection === Phaser.RIGHT ) {
 
 		this._player.setState( Player.State.WALKING );
 	}
@@ -265,12 +265,6 @@ PlayerController.prototype.onUpD = function() {
 PlayerController.prototype.onHoldD = function() {
 
 	console.log( 'hold D' );
-};
-
-
-PlayerController.Direction = {
-	LEFT: 'left',
-	RIGHT: 'right'
 };
 
 

@@ -19,6 +19,9 @@ var Ball = function( game, x, y, key, frame ) {
 	this.body.mass = 1;
 	this.body.damping = 0;
 	this.body.angularDamping = 1;
+
+	this.inputEnabled = true;
+	this.input.enableDrag();
 };
 inherits( Ball, Phaser.Sprite );
 
@@ -77,6 +80,19 @@ Ball.prototype.getInitialVelocity = function( startPosition, finalPosition, deg 
 		' m, final y: ' + y1 + ' m.' );
 
 	return v0;
+}
+
+
+
+Ball.prototype.update = function() {
+
+	if ( this.input.isDragged ) {
+
+		this.body.setZeroVelocity();
+
+		var pointer = this.input.game.input.activePointer;
+		this.body.reset( pointer.worldX, pointer.worldY );
+	}
 }
 
 

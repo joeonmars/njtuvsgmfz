@@ -8,18 +8,19 @@ var Player = function( config, game, x, y, key, frame ) {
 
 	Phaser.Sprite.call( this, game, x, y, key, frame );
 
-	game.physics.enable( this, Phaser.Physics.P2JS, true );
+	game.physics.enable( this, Phaser.Physics.ARCADE );
 
+	this.anchor.setTo( .5, 1 );
 	this.height = game.physics.p2.mpx( config.height );
-
-	this.body.setRectangle( game.physics.p2.mpx( .5 ), this.height );
-	this.body.fixedRotation = true;
-	this.body.mass = 1;
-	this.body.angularDamping = 1;
-	this.body.damping = this.calculateDampingByWeight( config.weight );
 
 	this.config = config;
 	this.id = config.id;
+
+	this.body.mass = 1;
+	this.body.allowRotation = false;
+	this.body.collideWorldBounds = true;
+	this.body.maxVelocity.x = this.calculateMaxSpeed( config.sprint );
+	this.body.drag.x = this.game.physics.p2.mpx( 8 );
 
 	//
 	this.hasBall = false;
@@ -30,6 +31,13 @@ var Player = function( config, game, x, y, key, frame ) {
 inherits( Player, Phaser.Sprite );
 
 
+Player.prototype.setPosition = function( x, y ) {
+
+	this.body.x = x;
+	this.body.y = y;
+};
+
+
 Player.prototype.isInTheAir = function() {
 
 	return Math.round( this.body.velocity.y ) !== 0;
@@ -38,7 +46,17 @@ Player.prototype.isInTheAir = function() {
 
 Player.prototype.calculateJumpVelocity = function( jump ) {
 
-	return Phaser.Math.linearInterpolation( [ 1.5, 4.5 ], jump );
+	var minJump = this.game.physics.p2.mpx( -1.5 );
+	var maxJump = this.game.physics.p2.mpx( -4.5 );
+	return Phaser.Math.linearInterpolation( [ minJump, maxJump ], jump );
+};
+
+
+Player.prototype.calculateMaxSpeed = function( sprint ) {
+
+	var minSpeed = this.game.physics.p2.mpx( 2.5 );
+	var maxSpeed = this.game.physics.p2.mpx( 5.5 );
+	return Phaser.Math.linearInterpolation( [ minSpeed, maxSpeed ], sprint );
 };
 
 
@@ -76,21 +94,31 @@ Player.prototype.face = function( facing ) {
 
 	this.facing = facing;
 
-	this.scale.x = ( facing === Player.Facing.LEFT ) ? 1 : -1;
+	this.scale.x = ( facing === Phaser.LEFT ) ? 1 : -1;
+
+	this.body.velocity.x = 0;
+};
+
+
+Player.prototype.stance = function() {
+
+	this.body.acceleration.x = 0;
+	this.body.acceleration.y = 0;
 };
 
 
 Player.prototype.walk = function() {
 
-	var speed = this.game.physics.p2.mpx( 1.3 );
+	//http://hypertextbook.com/facts/2007/charlesbarkley.shtml
+	var acceleration = this.game.physics.p2.mpx( 2 );
 
-	if ( this.facing === Player.Facing.LEFT ) {
+	if ( this.facing === Phaser.LEFT ) {
 
-		this.body.moveLeft( speed );
+		this.body.acceleration.x = -acceleration;
 
 	} else {
 
-		this.body.moveRight( speed );
+		this.body.acceleration.x = acceleration;
 	}
 };
 
@@ -106,15 +134,17 @@ Player.prototype.jump = function() {
 	}
 
 	var jumpVelocity = this.calculateJumpVelocity( this.config.jump );
-	var impulse = [ 0, jumpVelocity ];
-
-	this.body.applyImpulse( impulse, this.x, this.y );
+	this.body.velocity.y = jumpVelocity;
 };
 
 
 Player.prototype.update = function() {
 
 	switch ( this._state ) {
+		case Player.State.STANCE:
+			this.stance();
+			break;
+
 		case Player.State.JUMPING:
 			this.jump();
 			break;
@@ -126,6 +156,8 @@ Player.prototype.update = function() {
 		default:
 			break;
 	}
+
+	this.game.debug.body( this );
 };
 
 
@@ -136,12 +168,6 @@ Player.State = {
 	SHOOTING: 'shooting',
 	PASSING: 'passing',
 	JUMPING: 'jumping'
-};
-
-
-Player.Facing = {
-	LEFT: 'left',
-	RIGHT: 'right'
 };
 
 

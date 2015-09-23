@@ -13,12 +13,7 @@ Boot.prototype.init = function() {
 
 	this.stage.backgroundColor = '#333';
 
-	this.game.scale.pageAlignVertically = true;
-	this.game.scale.pageAlignHorizontally = true;
-	this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
-	this.game.scale.setShowAll();
-	this.game.scale.refresh();
-
+	this.physics.startSystem( Phaser.Physics.ARCADE );
 	this.physics.startSystem( Phaser.Physics.P2JS );
 
 	// A high school basketball court is 26m
@@ -41,6 +36,14 @@ Boot.prototype.init = function() {
 		return v * -( 1 / pxPerMeter );
 	}
 
+	//
+	this.game.scale.pageAlignVertically = true;
+	this.game.scale.pageAlignHorizontally = true;
+	this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+	this.game.scale.setShowAll();
+	this.game.scale.refresh();
+
+	//
 	this.state.add( 'Playground', PlaygroundState );
 	this.state.start( 'Playground', true );
 };
