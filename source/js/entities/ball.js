@@ -1,4 +1,6 @@
 var inherits = require( 'inherits' );
+var Events = require( 'common/events' );
+
 
 /* Reference
 http://stackoverflow.com/questions/5262240/2d-parabolic-projectile
@@ -23,6 +25,12 @@ var Ball = function( game, x, y, key, frame ) {
 	this.inputEnabled = true;
 	this.input.enableDrag();
 
+	Events.ballCaught.add( this.onCaught, this );
+	Events.ballShot.add( this.onShot, this );
+
+	// gameplay relevant properties
+	this._player = null;
+
 	// projectile properties
 	this.velocityX = 0;
 	this.velocityY = 0;
@@ -30,6 +38,15 @@ var Ball = function( game, x, y, key, frame ) {
 	this.startY = 0;
 };
 inherits( Ball, Phaser.Sprite );
+
+
+Ball.prototype.setPosition = function( x, y ) {
+
+	this.x = x;
+	this.y = y;
+	this.body.x = x;
+	this.body.y = y;
+};
 
 
 Ball.prototype.shoot = function( finalPosition ) {
@@ -121,6 +138,28 @@ Ball.prototype.update = function() {
 		var pointer = this.input.game.input.activePointer;
 		this.body.reset( pointer.worldX, pointer.worldY );
 	}
+}
+
+
+Ball.prototype.onCaught = function( player ) {
+
+	this._player = player;
+
+	this.game.world.removeChild( this );
+}
+
+
+Ball.prototype.onShot = function( player, startX, startY, targetX, targetY ) {
+
+	this._player = null;
+
+	this.setPosition( startX, startY );
+	this.game.world.addChild( this );
+
+	this.shoot( {
+		x: targetX,
+		y: targetY
+	} );
 }
 
 

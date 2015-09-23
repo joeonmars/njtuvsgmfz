@@ -4,7 +4,6 @@
   "devDependencies": {
     "browserify": "latest",
     "browserify-shim": "latest",
-    "crossroads": "^0.12.2",
     "grunt": "~0.4.2",
     "grunt-browserify": "latest",
     "grunt-closure-soy": "latest",
@@ -18,7 +17,6 @@
     "jquery": "latest",
     "mobile-detect": "^1.2.1",
     "remapify": "latest",
-    "signals": "^1.0.0",
     "underscore": "^1.8.3"
   },
   "browserify": {

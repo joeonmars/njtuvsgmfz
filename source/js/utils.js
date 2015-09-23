@@ -11,6 +11,11 @@ Utils.lerp = function( a, b, x ) {
 };
 
 
+Utils.nearlyEquals = function( a, b, opt_tolerance ) {
+	return Math.abs( a - b ) <= ( opt_tolerance || 0.000001 );
+};
+
+
 Utils.pad = function( n, width, z ) {
 	z = z || '0';
 	n = n + '';

@@ -1,12 +1,14 @@
 var inherits = require( 'inherits' );
+var Events = require( 'common/events' );
+
 
 /**
  * The base player class.
  * @constructor
  */
-var Player = function( config, game, x, y, key, frame ) {
+var Player = function( config, game, gameElements ) {
 
-	Phaser.Sprite.call( this, game, x, y, key, frame );
+	Phaser.Sprite.call( this, game );
 
 	game.physics.enable( this, Phaser.Physics.ARCADE );
 
@@ -26,13 +28,27 @@ var Player = function( config, game, x, y, key, frame ) {
 	this.hasBall = false;
 	this.facing = null;
 
+	this._gameElements = _.extendOwn( {
+		ball: null,
+		ownBasket: null,
+		opponentBasket: null,
+		teammate: null,
+		opponents: null
+	}, gameElements );
+
 	this._state = null;
+
+	//
+	Events.ballCaught.add( this.onCaught, this );
+	Events.ballShot.add( this.onShot, this );
 };
 inherits( Player, Phaser.Sprite );
 
 
 Player.prototype.setPosition = function( x, y ) {
 
+	this.x = x;
+	this.y = y;
 	this.body.x = x;
 	this.body.y = y;
 };
@@ -138,6 +154,31 @@ Player.prototype.jump = function() {
 };
 
 
+Player.prototype.shoot = function() {
+
+	if ( !this.hasBall ) {
+		return;
+	}
+
+	var basket = this._gameElements.opponentBasket;
+	var ball = this._gameElements.ball;
+	var ballRadius = ball.width / 2;
+
+	// adjust facing towards basket before shooting
+	var facing = ( this.x > basket.x ) ? Phaser.LEFT : Phaser.RIGHT;
+	this.face( facing );
+
+	var startX = ( facing === Phaser.LEFT ) ? this.x - this.width / 2 - ballRadius : this.x + this.width / 2 + ballRadius;
+	var startY = this.y - this.height - ballRadius;
+	var targetX = basket.x;
+	var targetY = basket.y - basket.height / 2;
+
+	Events.ballShot.dispatch( ball, startX, startY, targetX, targetY );
+
+	this.setState( Player.State.STANCE );
+};
+
+
 Player.prototype.update = function() {
 
 	switch ( this._state ) {
@@ -153,12 +194,28 @@ Player.prototype.update = function() {
 			this.walk();
 			break;
 
+		case Player.State.SHOOTING:
+			this.shoot();
+			break;
+
 		default:
 			break;
 	}
 
 	this.game.debug.body( this );
 };
+
+
+Player.prototype.onCaught = function( player ) {
+
+	this.hasBall = ( this === player );
+}
+
+
+Player.prototype.onShot = function( player, x, y ) {
+
+	this.hasBall = false;
+}
 
 
 Player.State = {

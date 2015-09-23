@@ -1,10 +1,12 @@
 var inherits = require( 'inherits' );
 var Ball = require( 'entities/ball' );
 var Player = require( 'entities/player' );
-var PlayerConfig = require( 'configs/players' );
+var CameraTracker = require( 'entities/cameratracker' );
 var PlayerController = require( 'controllers/playercontroller' );
+var PlayerConfig = require( 'common/players' );
+var Events = require( 'common/events' );
 
-
+// Glossary: https://en.wikipedia.org/wiki/Glossary_of_basketball_terms
 var Playground = function() {
 
 	this.net = null;
@@ -57,21 +59,6 @@ Playground.prototype.create = function() {
 	] );
 	this.floorBody.debug = true;
 
-	// create ball
-	this.ball = new Ball( this.game, 0, 0, 'ball' );
-	this.ball.body.reset( this.worldW / 10, this.floorY - this.physics.p2.mpx( 1 ) );
-	this.world.add( this.ball );
-
-	// create player
-	var playerConfig = PlayerConfig[ 'zcw' ];
-	var playerX = 500;
-	var playerY = this.floorY;
-	this.player = new Player( playerConfig, this.game, playerX, playerY );
-	this.world.add( this.player );
-
-	this.playerController = new PlayerController( this.input );
-	this.playerController.setPlayer( this.player );
-
 	// create net & backboard
 	this.net = this.add.sprite( 0, 0, 'net' );
 	this.physics.p2.enable( this.net, true );
@@ -94,6 +81,27 @@ Playground.prototype.create = function() {
 	this.basketGroup.addChild( this.net );
 	this.basketGroup.addChild( this.backboard );
 
+	// create ball
+	this.ball = new Ball( this.game, 0, 0, 'ball' );
+	this.ball.setPosition( this.worldW / 10, this.floorY - this.physics.p2.mpx( 1 ) );
+	this.world.add( this.ball );
+
+	// create player
+	var playerConfig = PlayerConfig[ 'zcw' ];
+	var playerX = 600;
+	var playerY = this.floorY;
+
+	this.player = new Player( playerConfig, this.game, {
+		ball: this.ball,
+		opponentBasket: this.net
+	} );
+
+	this.player.setPosition( playerX, playerY );
+	this.world.add( this.player );
+
+	this.playerController = new PlayerController( this.input );
+	this.playerController.setPlayer( this.player );
+
 	// create materials
 	this.ballMaterial = this.physics.p2.createMaterial( 'ball', this.ball.body );
 	this.floorMaterial = this.physics.p2.createMaterial( 'floor', this.floorBody );
@@ -110,8 +118,10 @@ Playground.prototype.create = function() {
 	this.ballVsBackboardMaterial.restitution = 0.5;
 
 	// camera
-	//this.camera.focusOnXY( 0, this.worldH );
-	this.camera.follow( this.player );
+	this.cameraTracker = new CameraTracker( this.game, this.ball.x, this.ball.y );
+	this.world.add( this.cameraTracker );
+
+	this.cameraTracker.follow( this.ball );
 
 	//
 	this.backboardDragOffset = null;
@@ -124,28 +134,19 @@ Playground.prototype.create = function() {
 	this.circle = null;
 	this.predictX = 0;
 	this.predictY = 0;
+
+	//
+	Events.ballShot.add( this.onBallShot, this );
 };
 
 
 Playground.prototype.shoot = function() {
 
-	var targetPosition = this.net.position.clone();
-	targetPosition.y -= this.net.height / 2;
+	var target = this.net.position.clone();
+	target.y -= this.net.height / 2;
 
-	this.ball.shoot( targetPosition );
-
-	// test projectile prediction...
-	this.predictX = this.player.x;
-	this.predictY = this.ball.getPredictedY( this.predictX );
-
-	if ( _.isNumber( this.predictY ) ) {
-
-		console.log( 'predicted y of x: ' + this.predictX + ', ' + this.predictY );
-		this.circle = new Phaser.Circle( this.predictX, this.predictY, 20 );
-
-	} else {
-
-		this.circle = null;
+	if ( !this.player.hasBall ) {
+		Events.ballShot.dispatch( this.ball, this.ball.x, this.ball.y, target.x, target.y );
 	}
 };
 
@@ -163,6 +164,10 @@ Playground.prototype.update = function() {
 		this.net.body.x = worldX + this.netDragOffset.x;
 		this.net.body.y = worldY + this.netDragOffset.y;
 	}
+
+	if ( this.ball.overlap( this.player ) ) {
+		Events.ballCaught.dispatch( this.player );
+	}
 };
 
 
@@ -178,6 +183,24 @@ Playground.prototype.onBasketDragStart = function( sprite, pointer, x, y ) {
 
 	this.backboardDragOffset = new Phaser.Point( this.backboard.x - pointer.worldX, this.backboard.y - pointer.worldY );
 	this.netDragOffset = new Phaser.Point( this.net.x - pointer.worldX, this.net.y - pointer.worldY );
+};
+
+
+Playground.prototype.onBallShot = function() {
+
+	// test projectile prediction...
+	this.predictX = this.player.x;
+	this.predictY = this.ball.getPredictedY( this.predictX );
+
+	if ( _.isNumber( this.predictY ) ) {
+
+		console.log( 'predicted y of x: ' + this.predictX + ', ' + this.predictY );
+		this.circle = new Phaser.Circle( this.predictX, this.predictY, 20 );
+
+	} else {
+
+		this.circle = null;
+	}
 };
 
 

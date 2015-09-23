@@ -111,7 +111,7 @@ PlayerController.prototype.enableKeys = function() {
  */
 PlayerController.prototype.onDownLeft = function() {
 
-	console.log( 'down left' );
+	//console.log( 'down left' );
 
 	this._player.face( Phaser.LEFT );
 	this._currentDirection = Phaser.LEFT;
@@ -120,7 +120,7 @@ PlayerController.prototype.onDownLeft = function() {
 
 PlayerController.prototype.onUpLeft = function() {
 
-	console.log( 'up left' );
+	//console.log( 'up left' );
 
 	this._holdingDirection[ Phaser.LEFT ] = false;
 
@@ -139,7 +139,7 @@ PlayerController.prototype.onUpLeft = function() {
 
 PlayerController.prototype.onHoldLeft = function() {
 
-	console.log( 'hold left' );
+	//console.log( 'hold left' );
 
 	this._holdingDirection[ Phaser.LEFT ] = true;
 
@@ -155,7 +155,7 @@ PlayerController.prototype.onHoldLeft = function() {
  */
 PlayerController.prototype.onDownRight = function() {
 
-	console.log( 'down right' );
+	//console.log( 'down right' );
 
 	this._player.face( Phaser.RIGHT );
 
@@ -165,7 +165,7 @@ PlayerController.prototype.onDownRight = function() {
 
 PlayerController.prototype.onUpRight = function() {
 
-	console.log( 'up right' );
+	//console.log( 'up right' );
 
 	this._holdingDirection[ Phaser.RIGHT ] = false;
 
@@ -184,7 +184,7 @@ PlayerController.prototype.onUpRight = function() {
 
 PlayerController.prototype.onHoldRight = function() {
 
-	console.log( 'hold right' );
+	//console.log( 'hold right' );
 
 	this._holdingDirection[ Phaser.RIGHT ] = true;
 
@@ -202,7 +202,7 @@ PlayerController.prototype.onHoldRight = function() {
  */
 PlayerController.prototype.onDownA = function() {
 
-	console.log( 'down A' );
+	//console.log( 'down A' );
 
 	this._player.setState( Player.State.JUMPING );
 };
@@ -210,13 +210,13 @@ PlayerController.prototype.onDownA = function() {
 
 PlayerController.prototype.onUpA = function() {
 
-	console.log( 'up A' );
+	//console.log( 'up A' );
 };
 
 
 PlayerController.prototype.onHoldA = function() {
 
-	console.log( 'hold A' );
+	//console.log( 'hold A' );
 };
 
 
@@ -227,19 +227,19 @@ PlayerController.prototype.onHoldA = function() {
  */
 PlayerController.prototype.onDownS = function() {
 
-	console.log( 'down S' );
+	//console.log( 'down S' );
 };
 
 
 PlayerController.prototype.onUpS = function() {
 
-	console.log( 'up S' );
+	//console.log( 'up S' );
 };
 
 
 PlayerController.prototype.onHoldS = function() {
 
-	console.log( 'hold S' );
+	//console.log( 'hold S' );
 };
 
 
@@ -250,21 +250,23 @@ PlayerController.prototype.onHoldS = function() {
  */
 PlayerController.prototype.onDownD = function() {
 
-	console.log( 'down D' );
+	//console.log( 'down D' );
 
-	//this._player.shoot();
+	if ( this._player.hasBall ) {
+		this._player.setState( Player.State.SHOOTING );
+	}
 };
 
 
 PlayerController.prototype.onUpD = function() {
 
-	console.log( 'up D' );
+	//console.log( 'up D' );
 };
 
 
 PlayerController.prototype.onHoldD = function() {
 
-	console.log( 'hold D' );
+	//console.log( 'hold D' );
 };
 
 
