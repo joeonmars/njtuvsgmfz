@@ -77,7 +77,6 @@ Playground.prototype.create = function() {
 	this.physics.p2.enable( this.net, true );
 
 	this.netY = this.floorY - this.physics.p2.mpx( 3.048 ) + this.net.height / 2;
-	console.log( this.netY )
 	this.net.body.reset( 70, this.netY );
 	this.net.body.static = true;
 	this.net.body.clearShapes();
@@ -120,6 +119,11 @@ Playground.prototype.create = function() {
 
 	this.spacebarKey = this.input.keyboard.addKey( Phaser.Keyboard.SPACEBAR );
 	this.spacebarKey.onDown.add( this.shoot, this );
+
+	// debug
+	this.circle = null;
+	this.predictX = 0;
+	this.predictY = 0;
 };
 
 
@@ -129,6 +133,20 @@ Playground.prototype.shoot = function() {
 	targetPosition.y -= this.net.height / 2;
 
 	this.ball.shoot( targetPosition );
+
+	// test projectile prediction...
+	this.predictX = this.player.x;
+	this.predictY = this.ball.getPredictedY( this.predictX );
+
+	if ( _.isNumber( this.predictY ) ) {
+
+		console.log( 'predicted y of x: ' + this.predictX + ', ' + this.predictY );
+		this.circle = new Phaser.Circle( this.predictX, this.predictY, 20 );
+
+	} else {
+
+		this.circle = null;
+	}
 };
 
 
@@ -144,6 +162,14 @@ Playground.prototype.update = function() {
 
 		this.net.body.x = worldX + this.netDragOffset.x;
 		this.net.body.y = worldY + this.netDragOffset.y;
+	}
+};
+
+
+Playground.prototype.render = function() {
+
+	if ( this.circle ) {
+		this.game.debug.geom( this.circle, 'rgba(255, 255, 0, .5)' );
 	}
 };
 

@@ -22,6 +22,12 @@ var Ball = function( game, x, y, key, frame ) {
 
 	this.inputEnabled = true;
 	this.input.enableDrag();
+
+	// projectile properties
+	this.velocityX = 0;
+	this.velocityY = 0;
+	this.startX = 0;
+	this.startY = 0;
 };
 inherits( Ball, Phaser.Sprite );
 
@@ -50,12 +56,15 @@ Ball.prototype.shoot = function( finalPosition ) {
 
 	var direction = ( this.position.x > finalPosition.x ) ? 1 : -1;
 
-	var vx = v * Math.cos( rad ) * direction;
-	var vy = v * Math.sin( rad );
+	this.velocityX = v * Math.cos( rad ) * direction;
+	this.velocityY = v * Math.sin( rad );
+
+	this.startX = this.x;
+	this.startY = this.y;
 
 	this.body.setZeroVelocity();
 
-	var impulse = [ vx, vy ];
+	var impulse = [ this.velocityX, this.velocityY ];
 	this.body.applyImpulse( impulse, this.x, this.y );
 }
 
@@ -82,6 +91,25 @@ Ball.prototype.getInitialVelocity = function( startPosition, finalPosition, deg 
 	return v0;
 }
 
+
+Ball.prototype.getPredictedY = function( worldX ) {
+
+	if ( ( worldX < this.startX && this.velocityX < 0 ) ||
+		( worldX > this.startX && this.velocityX > 0 ) ) {
+		return null;
+	}
+
+	//http://www.physicsclassroom.com/class/vectors/Lesson-2/Horizontal-and-Vertical-Displacement
+	var displacementX = this.game.physics.p2.pxm( Math.abs( worldX - this.startX ) );
+	var t = displacementX / Math.abs( this.velocityX );
+	var g = -9.81;
+
+	var displacementY = this.velocityY * t + .5 * g * Math.pow( t, 2 );
+
+	var worldY = this.game.physics.p2.mpx( this.game.physics.p2.pxm( this.startY ) - displacementY );
+
+	return worldY;
+}
 
 
 Ball.prototype.update = function() {
