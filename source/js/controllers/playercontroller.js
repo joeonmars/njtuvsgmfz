@@ -113,7 +113,7 @@ PlayerController.prototype.onDownLeft = function() {
 
 	//console.log( 'down left' );
 
-	if ( this._player.isInTheAir() ) {
+	if ( this._player.isInTheAir ) {
 		return;
 	}
 
@@ -128,7 +128,7 @@ PlayerController.prototype.onUpLeft = function() {
 
 	this._holdingDirection[ Phaser.LEFT ] = false;
 
-	if ( this._player.isInTheAir() ) {
+	if ( this._player.isInTheAir ) {
 		return;
 	}
 
@@ -151,7 +151,7 @@ PlayerController.prototype.onHoldLeft = function() {
 
 	this._holdingDirection[ Phaser.LEFT ] = true;
 
-	if ( this._player.isInTheAir() ) {
+	if ( this._player.isInTheAir ) {
 		return;
 	}
 
@@ -169,7 +169,7 @@ PlayerController.prototype.onDownRight = function() {
 
 	//console.log( 'down right' );
 
-	if ( this._player.isInTheAir() ) {
+	if ( this._player.isInTheAir ) {
 		return;
 	}
 
@@ -184,7 +184,7 @@ PlayerController.prototype.onUpRight = function() {
 
 	this._holdingDirection[ Phaser.RIGHT ] = false;
 
-	if ( this._player.isInTheAir() ) {
+	if ( this._player.isInTheAir ) {
 		return;
 	}
 
@@ -207,7 +207,7 @@ PlayerController.prototype.onHoldRight = function() {
 
 	this._holdingDirection[ Phaser.RIGHT ] = true;
 
-	if ( this._player.isInTheAir() ) {
+	if ( this._player.isInTheAir ) {
 		return;
 	}
 
@@ -220,12 +220,20 @@ PlayerController.prototype.onHoldRight = function() {
 
 /**
  * Keyboard A
- * Offensing: quick jump shot
+ * Offensing: quick jump shot (not accelerating and far from basket), slam dunk (accelerating and close to basket)
  * Defensing: jump (block & rebound)
  */
 PlayerController.prototype.onDownA = function() {
 
 	//console.log( 'down A' );
+
+	if ( this._player.isState( Player.State.WALKING ) ) {
+
+		if ( this._player.hasBall ) {
+			this._player.setState( Player.State.DUNKING );
+			return;
+		}
+	}
 
 	this._player.setState( Player.State.JUMPING );
 };
@@ -268,7 +276,7 @@ PlayerController.prototype.onHoldS = function() {
 
 /**
  * Keyboard D
- * Offensing: shoot, tap to pump fake
+ * Offensing: shoot, tap to pump fake, jump shoot when accelerating
  * Defensing: steal ball, pressed continuously to shove opponents
  */
 PlayerController.prototype.onDownD = function() {

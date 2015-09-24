@@ -45,7 +45,13 @@ Playground.prototype.create = function() {
 	this.floorY = this.worldH - this.floorH;
 
 	this.game.world.setBounds( 0, 0, this.worldW, this.worldH );
-	this.physics.arcade.bounds.height = this.floorY;
+
+	this.floor = this.add.sprite( 0, this.floorY );
+	this.physics.enable( this.floor, Phaser.Physics.ARCADE );
+	this.floor.body.allowGravity = false;
+	this.floor.body.allowRotation = false;
+	this.floor.body.immovable = true;
+	this.floor.body.setSize( this.worldW, this.floorH );
 
 	// create tiling sky
 	this.sky = this.add.tileSprite( 0, 0, this.worldW, this.floorY, 'sky' );
@@ -58,7 +64,7 @@ Playground.prototype.create = function() {
 		[ this.worldW, this.floorH ],
 		[ 0, this.floorH ]
 	] );
-	this.floorBody.debug = true;
+	//this.floorBody.debug = true;
 
 	// create net & backboard
 	this.net = this.add.sprite( 0, 0, 'net' );
@@ -93,6 +99,7 @@ Playground.prototype.create = function() {
 	var playerY = this.floorY;
 
 	this.player = new Player( playerConfig, this.game, {
+		floor: this.floor,
 		ball: this.ball,
 		opponentBasket: this.net
 	} );
@@ -175,6 +182,7 @@ Playground.prototype.update = function() {
 	}
 
 	//this.game.debug.body( this.player );
+	//this.game.debug.body( this.floor );
 };
 
 
