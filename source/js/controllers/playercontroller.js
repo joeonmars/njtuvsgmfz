@@ -113,6 +113,10 @@ PlayerController.prototype.onDownLeft = function() {
 
 	//console.log( 'down left' );
 
+	if ( this._player.isInTheAir() ) {
+		return;
+	}
+
 	this._player.face( Phaser.LEFT );
 	this._currentDirection = Phaser.LEFT;
 };
@@ -123,6 +127,10 @@ PlayerController.prototype.onUpLeft = function() {
 	//console.log( 'up left' );
 
 	this._holdingDirection[ Phaser.LEFT ] = false;
+
+	if ( this._player.isInTheAir() ) {
+		return;
+	}
 
 	if ( this._holdingDirection[ Phaser.RIGHT ] ) {
 
@@ -143,6 +151,10 @@ PlayerController.prototype.onHoldLeft = function() {
 
 	this._holdingDirection[ Phaser.LEFT ] = true;
 
+	if ( this._player.isInTheAir() ) {
+		return;
+	}
+
 	if ( this._currentDirection === Phaser.LEFT ) {
 
 		this._player.setState( Player.State.WALKING );
@@ -157,8 +169,11 @@ PlayerController.prototype.onDownRight = function() {
 
 	//console.log( 'down right' );
 
-	this._player.face( Phaser.RIGHT );
+	if ( this._player.isInTheAir() ) {
+		return;
+	}
 
+	this._player.face( Phaser.RIGHT );
 	this._currentDirection = Phaser.RIGHT;
 };
 
@@ -168,6 +183,10 @@ PlayerController.prototype.onUpRight = function() {
 	//console.log( 'up right' );
 
 	this._holdingDirection[ Phaser.RIGHT ] = false;
+
+	if ( this._player.isInTheAir() ) {
+		return;
+	}
 
 	if ( this._holdingDirection[ Phaser.LEFT ] ) {
 
@@ -187,6 +206,10 @@ PlayerController.prototype.onHoldRight = function() {
 	//console.log( 'hold right' );
 
 	this._holdingDirection[ Phaser.RIGHT ] = true;
+
+	if ( this._player.isInTheAir() ) {
+		return;
+	}
 
 	if ( this._currentDirection === Phaser.RIGHT ) {
 

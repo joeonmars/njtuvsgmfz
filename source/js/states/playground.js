@@ -27,6 +27,7 @@ Playground.prototype.preload = function() {
 	this.load.image( 'backboard', 'images/backboard.png' );
 	this.load.image( 'net', 'images/basketball-net-small.png' );
 	this.load.physics( 'net', 'json/basketball-net.json' );
+	this.load.spritesheet( 'walk', 'images/walk.png', 104, 150, 14 );
 };
 
 
@@ -88,7 +89,7 @@ Playground.prototype.create = function() {
 
 	// create player
 	var playerConfig = PlayerConfig[ 'zcw' ];
-	var playerX = 600;
+	var playerX = this.game.width - 200;
 	var playerY = this.floorY;
 
 	this.player = new Player( playerConfig, this.game, {
@@ -165,17 +166,15 @@ Playground.prototype.update = function() {
 		this.net.body.y = worldY + this.netDragOffset.y;
 	}
 
-	if ( this.ball.overlap( this.player ) ) {
+	if ( this.ball.exists && this.ball.overlap( this.player ) ) {
 		Events.ballCaught.dispatch( this.player );
 	}
-};
-
-
-Playground.prototype.render = function() {
 
 	if ( this.circle ) {
 		this.game.debug.geom( this.circle, 'rgba(255, 255, 0, .5)' );
 	}
+
+	//this.game.debug.body( this.player );
 };
 
 

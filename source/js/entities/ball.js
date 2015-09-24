@@ -14,6 +14,8 @@ var Ball = function( game, x, y, key, frame ) {
 
 	game.physics.enable( this, Phaser.Physics.P2JS );
 
+	this.entityType = 'ball';
+
 	this.width = this.height = game.physics.p2.mpx( 0.25 );
 
 	this.body.setCircle( this.width / 2 );
@@ -145,7 +147,7 @@ Ball.prototype.onCaught = function( player ) {
 
 	this._player = player;
 
-	this.game.world.removeChild( this );
+	this.exists = false;
 }
 
 
@@ -154,7 +156,8 @@ Ball.prototype.onShot = function( player, startX, startY, targetX, targetY ) {
 	this._player = null;
 
 	this.setPosition( startX, startY );
-	this.game.world.addChild( this );
+
+	this.exists = true;
 
 	this.shoot( {
 		x: targetX,

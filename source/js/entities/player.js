@@ -8,15 +8,17 @@ var Events = require( 'common/events' );
  */
 var Player = function( config, game, gameElements ) {
 
-	Phaser.Sprite.call( this, game );
+	Phaser.Sprite.call( this, game, null, null, 'walk' );
 
 	game.physics.enable( this, Phaser.Physics.ARCADE );
 
-	this.anchor.setTo( .5, 1 );
-	this.height = game.physics.p2.mpx( config.height );
-
 	this.config = config;
 	this.id = config.id;
+	this.entityType = 'player';
+
+	this.anchor.setTo( .5, 1 );
+	this.height = game.physics.p2.mpx( config.height );
+	this.width = this.height * ( 104 / 150 );
 
 	this.body.mass = 1;
 	this.body.allowRotation = false;
@@ -24,9 +26,11 @@ var Player = function( config, game, gameElements ) {
 	this.body.maxVelocity.x = this.calculateMaxSpeed( config.sprint );
 	this.body.drag.x = this.game.physics.p2.mpx( 8 );
 
+	this.setBodyRatio( .5, 1 );
+
 	//
 	this.hasBall = false;
-	this.facing = null;
+	this.facing = Phaser.RIGHT;
 
 	this._gameElements = _.extendOwn( {
 		ball: null,
@@ -41,6 +45,12 @@ var Player = function( config, game, gameElements ) {
 	//
 	Events.ballCaught.add( this.onCaught, this );
 	Events.ballShot.add( this.onShot, this );
+
+	//
+	this.animations.add( 'walk', [ 0, 1, 2, 3, 4, 5 ], 8, true );
+	this.animations.add( 'stance', [ 12 ] );
+
+	this.setState( Player.State.STANCE );
 };
 inherits( Player, Phaser.Sprite );
 
@@ -51,6 +61,12 @@ Player.prototype.setPosition = function( x, y ) {
 	this.y = y;
 	this.body.x = x;
 	this.body.y = y;
+};
+
+
+Player.prototype.setBodyRatio = function( rx, ry ) {
+
+	this.body.setSize( this.width / this.scale.x * rx, this.height / this.scale.y * ry );
 };
 
 
@@ -110,9 +126,12 @@ Player.prototype.face = function( facing ) {
 
 	this.facing = facing;
 
-	this.scale.x = ( facing === Phaser.LEFT ) ? 1 : -1;
+	var absScaleX = Math.abs( this.scale.x );
 
+	this.scale.x = ( facing === Phaser.LEFT ) ? -absScaleX : absScaleX;
 	this.body.velocity.x = 0;
+
+	Events.facingChanged.dispatch( this, facing );
 };
 
 
@@ -120,6 +139,8 @@ Player.prototype.stance = function() {
 
 	this.body.acceleration.x = 0;
 	this.body.acceleration.y = 0;
+
+	this.animations.play( 'stance' );
 };
 
 
@@ -136,6 +157,8 @@ Player.prototype.walk = function() {
 
 		this.body.acceleration.x = acceleration;
 	}
+
+	this.animations.play( 'walk' );
 };
 
 
@@ -168,7 +191,8 @@ Player.prototype.shoot = function() {
 	var facing = ( this.x > basket.x ) ? Phaser.LEFT : Phaser.RIGHT;
 	this.face( facing );
 
-	var startX = ( facing === Phaser.LEFT ) ? this.x - this.width / 2 - ballRadius : this.x + this.width / 2 + ballRadius;
+	var halfWidth = Math.abs( this.width / 2 );
+	var startX = ( facing === Phaser.LEFT ) ? this.x - halfWidth - ballRadius : this.x + halfWidth + ballRadius;
 	var startY = this.y - this.height - ballRadius;
 	var targetX = basket.x;
 	var targetY = basket.y - basket.height / 2;
@@ -201,8 +225,6 @@ Player.prototype.update = function() {
 		default:
 			break;
 	}
-
-	this.game.debug.body( this );
 };
 
 

@@ -17,8 +17,8 @@ Boot.prototype.init = function() {
 	this.physics.startSystem( Phaser.Physics.P2JS );
 
 	// A high school basketball court is 26m
-	// equivalent in pixels: 5200px
-	var pxPerMeter = 182;
+	// equivalent in pixels: 4420px
+	var pxPerMeter = 170;
 
 	this.physics.p2.mpx = function( v ) {
 		return v * pxPerMeter;
@@ -42,6 +42,8 @@ Boot.prototype.init = function() {
 	this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
 	this.game.scale.setShowAll();
 	this.game.scale.refresh();
+
+	this.game.renderer.renderSession.roundPixels = true;
 
 	//
 	this.state.add( 'Playground', PlaygroundState );
