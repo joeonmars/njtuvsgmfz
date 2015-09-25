@@ -87,8 +87,8 @@ Playground.prototype.create = function() {
 	this.backboard.body.static = true;
 
 	// create ball
-	this.ball = new Ball( this.game, 0, 0, 'ball' );
-	this.ball.setPosition( this.worldW / 10, this.floorY - this.physics.p2.mpx( 1 ) );
+	this.ball = new Ball( this.game );
+	this.ball.init( this.worldW / 10, this.floorY - this.physics.p2.mpx( 1 ) );
 	this.world.add( this.ball );
 
 	// create players
@@ -98,7 +98,7 @@ Playground.prototype.create = function() {
 	var playerY = this.floorY;
 
 	this.player1 = new Player( this.game, playerConfig );
-	this.player1.setPosition( playerX, playerY );
+	this.player1.init( playerX, playerY );
 	this.world.add( this.player1 );
 
 	// player 2
@@ -107,7 +107,7 @@ Playground.prototype.create = function() {
 	var playerY = this.floorY;
 
 	this.player2 = new Player( this.game, playerConfig );
-	this.player2.setPosition( playerX, playerY );
+	this.player2.init( playerX, playerY );
 	this.world.add( this.player2 );
 
 	// set game elements to entities
@@ -192,9 +192,9 @@ Playground.prototype.update = function() {
 Playground.prototype.render = function() {
 
 	this.game.debug.start( 20, 20 );
-	this.game.debug.line( 'Player 1 state: ' + this.player1.getState() );
-	this.game.debug.line( 'Player 2 state: ' + this.player2.getState() );
-	this.game.debug.line( 'Ball state: ' + this.ball.getState() );
+	this.game.debug.line( 'Player 1 stat: ' + this.player1.getStat() );
+	this.game.debug.line( 'Player 2 stat: ' + this.player2.getStat() );
+	this.game.debug.line( 'Ball stat: ' + this.ball.getStat() );
 	//this.game.debug.body( this.player1 );
 	//this.game.debug.body( this.floor );
 	this.game.debug.stop();

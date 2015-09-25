@@ -1,20 +1,20 @@
 var inherits = require( 'inherits' );
 var Events = require( 'common/events' );
-
+var Entity = require( 'entities/entity' );
+var Stat = Entity.Stat;
 
 /**
- * The base player class.
+ * The player class.
  * @constructor
  */
 var Player = function( game, config ) {
 
-	Phaser.Sprite.call( this, game, null, null, 'walk' );
+	Entity.call( this, game, 'walk', Entity.Type.PLAYER );
 
 	game.physics.enable( this, Phaser.Physics.ARCADE );
 
 	this.config = config;
 	this.id = config.id;
-	this.entityType = 'player';
 
 	this._minDragX = 0;
 	this._maxDragX = this.game.physics.p2.mpx( 8 );
@@ -31,8 +31,6 @@ var Player = function( game, config ) {
 	this.body.maxVelocity.x = this.calculateMaxSpeed( config.sprint );
 	this.body.drag.x = this._maxDragX;
 
-	this.setBodyRatio( .5, 1 );
-
 	//
 	this.hasBall = false;
 	this.isInTheAir = false;
@@ -48,36 +46,26 @@ var Player = function( game, config ) {
 		opponents: null
 	};
 
-	this._state = null;
 	this._strategy = null;
 
-	//
+	this.animations.add( 'walk', [ 0, 1, 2, 3, 4, 5 ], 8, true );
+	this.animations.add( 'stance', [ 12 ] );
+};
+inherits( Player, Entity );
+
+
+Player.prototype.init = function( x, y ) {
+
+	Entity.prototype.init.call( this, x, y, Stat.STANCE );
+
+	this.setBodyRatio( .5, 1 );
+
+	this.setStrategy( Player.Strategy.COMPETE );
+
 	Events.ballCaught.add( this.onCaught, this );
 	Events.ballShot.add( this.onShot, this );
 	Events.ballDropped.add( this.onDropped, this );
 	Events.strategyChanged.add( this.onStrategyChanged, this );
-
-	//
-	this.animations.add( 'walk', [ 0, 1, 2, 3, 4, 5 ], 8, true );
-	this.animations.add( 'stance', [ 12 ] );
-
-	this.setState( Player.State.STANCE );
-	this.setStrategy( Player.Strategy.COMPETE );
-};
-inherits( Player, Phaser.Sprite );
-
-
-Player.prototype.setGameElements = function( gameElements ) {
-
-	this._gameElements = _.extendOwn( this._gameElements, gameElements );
-};
-
-
-Player.prototype.setPosition = function( x, y ) {
-
-	this.x = x;
-	this.y = y;
-	this.body.reset( x, y );
 };
 
 
@@ -120,51 +108,9 @@ Player.prototype.setStrategy = function( strategy ) {
 };
 
 
-Player.prototype.setState = function( state ) {
-
-	//console.log( 'Player ' + this.id + ' state: ' + state );
-	this._state = state;
-};
-
-
-Player.prototype.getState = function() {
-
-	return this._state;
-};
-
-
-Player.prototype.isState = function( state ) {
-
-	return this._state === state;
-};
-
-
 Player.prototype.isStrategy = function( strategy ) {
 
 	return this._strategy === strategy;
-};
-
-
-Player.prototype.getInitialVelocity = function( startPosition, finalPosition, deg ) {
-
-	var dx = this.game.physics.p2.pxm( Math.abs( finalPosition.x - startPosition.x ) );
-
-	var y0 = this.game.physics.p2.pxm( this.game.world.height - startPosition.y );
-	var y1 = this.game.physics.p2.pxm( this.game.world.height - finalPosition.y );
-	var g = 9.81;
-
-	var rad = Phaser.Math.degToRad( deg );
-	var rad2 = Phaser.Math.degToRad( deg * 2 );
-	var cos2 = ( 1 + Math.cos( rad2 ) ) / 2;
-
-	var v0 = Math.sqrt( ( Math.pow( dx, 2 ) * .5 * -g ) / ( ( y1 - y0 - dx * Math.tan( rad ) ) * cos2 ) );
-
-	console.log( 'initial velocity: ' + v0 +
-		' m/s^2, jumping distance x: ' + dx +
-		' m, start y: ' + y0 +
-		' m, final y: ' + y1 + ' m.' );
-
-	return v0;
 };
 
 
@@ -255,7 +201,7 @@ Player.prototype.shoot = function() {
 
 	Events.ballShot.dispatch( ball, startX, startY, targetX, targetY );
 
-	this.setState( Player.State.STANCE );
+	this.setStat( Stat.STANCE );
 };
 
 
@@ -307,37 +253,47 @@ Player.prototype.dunk = function() {
 };
 
 
+Player.prototype.detectBallCollision = function() {
+
+	var ball = this._gameElements.ball;
+	var canCollide = ball.exists && ball.isStat( Stat.NORMAL );
+
+	if ( canCollide && ball.overlap( this ) ) {
+
+		Events.ballCaught.dispatch( this );
+	}
+};
+
+
 Player.prototype.update = function() {
+
+	Entity.prototype.update.call( this );
 
 	this.isInTheAir = !this.game.physics.arcade.collide( this, this._gameElements.floor, this.onCollideWithFloor, null, this );
 
 	this.body.drag.x = this.isInTheAir ? this._minDragX : this._maxDragX;
 
-	var ball = this._gameElements.ball;
+	this.detectBallCollision();
 
-	if ( ball.exists && ball.overlap( this ) ) {
-
-		Events.ballCaught.dispatch( this );
-	}
-
-	switch ( this._state ) {
-		case Player.State.STANCE:
+	//
+	switch ( this.getStat() ) {
+		case Stat.STANCE:
 			this.stance();
 			break;
 
-		case Player.State.JUMPING:
+		case Stat.JUMPING:
 			this.jump();
 			break;
 
-		case Player.State.WALKING:
+		case Stat.WALKING:
 			this.walk();
 			break;
 
-		case Player.State.SHOOTING:
+		case Stat.SHOOTING:
 			this.shoot();
 			break;
 
-		case Player.State.DUNKING:
+		case Stat.DUNKING:
 			this.dunk();
 			break;
 
@@ -350,9 +306,9 @@ Player.prototype.update = function() {
 Player.prototype.onCollideWithFloor = function() {
 
 	if ( this.isInTheAir &&
-		( this.isState( Player.State.JUMPING ) || this.isState( Player.State.DUNKING ) ) ) {
+		( this.isStat( Stat.JUMPING ) || this.isStat( Stat.DUNKING ) ) ) {
 
-		this.setState( Player.State.STANCE );
+		this.setStat( Stat.STANCE );
 	}
 };
 
@@ -406,17 +362,6 @@ Player.prototype.onStrategyChanged = function( team, strategy ) {
 
 		this.setStrategy( strategy );
 	}
-};
-
-
-Player.State = {
-	STANCE: 'stance',
-	WALKING: 'walking',
-	RUNNING: 'running',
-	SHOOTING: 'shooting',
-	PASSING: 'passing',
-	JUMPING: 'jumping',
-	DUNKING: 'dunking'
 };
 
 

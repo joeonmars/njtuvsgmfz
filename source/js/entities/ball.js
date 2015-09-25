@@ -1,5 +1,7 @@
 var inherits = require( 'inherits' );
 var Events = require( 'common/events' );
+var Entity = require( 'entities/entity' );
+var Stat = Entity.Stat;
 
 
 /* Reference
@@ -8,13 +10,11 @@ https://www.boundless.com/physics/textbooks/boundless-physics-textbook/two-dimen
 http://physics.stackexchange.com/questions/27992/solving-for-initial-velocity-required-to-launch-a-projectile-to-a-given-destinat
 https://www.youtube.com/watch?v=DPByaJ7bpl0
 */
-var Ball = function( game, x, y, key, frame ) {
+var Ball = function( game ) {
 
-	Phaser.Sprite.call( this, game, x, y, key, frame );
+	Entity.call( this, game, 'ball', Entity.Type.BALL );
 
 	game.physics.enable( this, Phaser.Physics.P2JS );
-
-	this.entityType = 'ball';
 
 	this.width = this.height = game.physics.p2.mpx( 0.25 );
 
@@ -29,7 +29,6 @@ var Ball = function( game, x, y, key, frame ) {
 
 	// gameplay relevant properties
 	this._player = null;
-	this._state = null;
 
 	this._gameElements = {
 		floorBody: null,
@@ -44,54 +43,30 @@ var Ball = function( game, x, y, key, frame ) {
 	this.velocityY = 0;
 	this.startX = 0;
 	this.startY = 0;
+};
+inherits( Ball, Entity );
 
-	// init
+
+Ball.prototype.init = function( x, y ) {
+
+	Entity.prototype.init.call( this, x, y, Stat.NORMAL );
+
 	Events.ballCaught.add( this.onCaught, this );
 	Events.ballShot.add( this.onShot, this );
 
 	this.body.onBeginContact.add( this.onBeginContact, this );
-
-	this.setState( Ball.State.NORMAL );
 };
-inherits( Ball, Phaser.Sprite );
 
 
 Ball.prototype.setGameElements = function( gameElements ) {
 
-	this._gameElements = _.extendOwn( this._gameElements, gameElements );
+	Entity.prototype.setGameElements.call( this, gameElements );
 
 	this._floorBodyId = this._gameElements.floorBody.id;
 
 	this._basketBodyIds = _.map( this._gameElements.baskets, function( basket ) {
 		return basket.body.id;
 	} );
-};
-
-
-Ball.prototype.setPosition = function( x, y ) {
-
-	this.x = x;
-	this.y = y;
-	this.reset( x, y );
-};
-
-
-Ball.prototype.setState = function( state ) {
-
-	//console.log( 'Ball state: ' + state );
-	this._state = state;
-};
-
-
-Ball.prototype.getState = function() {
-
-	return this._state;
-};
-
-
-Ball.prototype.isState = function( state ) {
-
-	return this._state === state;
 };
 
 
@@ -130,30 +105,7 @@ Ball.prototype.shoot = function( finalPosition ) {
 	var impulse = [ this.velocityX, this.velocityY ];
 	this.body.applyImpulse( impulse, this.x, this.y );
 
-	this.setState( Ball.State.SHOOTING );
-};
-
-
-Ball.prototype.getInitialVelocity = function( startPosition, finalPosition, deg ) {
-
-	var dx = this.game.physics.p2.pxm( Math.abs( finalPosition.x - startPosition.x ) );
-
-	var y0 = this.game.physics.p2.pxm( this.game.world.height - startPosition.y );
-	var y1 = this.game.physics.p2.pxm( this.game.world.height - finalPosition.y );
-	var g = 9.81;
-
-	var rad = Phaser.Math.degToRad( deg );
-	var rad2 = Phaser.Math.degToRad( deg * 2 );
-	var cos2 = ( 1 + Math.cos( rad2 ) ) / 2;
-
-	var v0 = Math.sqrt( ( Math.pow( dx, 2 ) * .5 * -g ) / ( ( y1 - y0 - dx * Math.tan( rad ) ) * cos2 ) );
-
-	console.log( 'initial velocity: ' + v0 +
-		' m/s^2, shooting distance x: ' + dx +
-		' m, start y: ' + y0 +
-		' m, final y: ' + y1 + ' m.' );
-
-	return v0;
+	this.setStat( Stat.SHOOTING );
 };
 
 
@@ -179,6 +131,8 @@ Ball.prototype.getPredictedY = function( worldX ) {
 
 Ball.prototype.update = function() {
 
+	Entity.prototype.update.call( this );
+
 	if ( this.input.isDragged ) {
 
 		this.body.setZeroVelocity();
@@ -195,7 +149,7 @@ Ball.prototype.onCaught = function( player ) {
 
 	this.exists = false;
 
-	this.setState( Ball.State.POSSESSING );
+	this.setStat( Stat.POSSESSING );
 };
 
 
@@ -223,20 +177,12 @@ Ball.prototype.onBeginContact = function( bodyA, bodyB ) {
 
 	if ( hitFloor ) {
 
-		this.setState( Ball.State.NORMAL );
+		this.setStat( Stat.NORMAL );
 
 	} else if ( hitBasket ) {
 
-		this.setState( Ball.State.NORMAL );
+		this.setStat( Stat.NORMAL );
 	}
-};
-
-
-Ball.State = {
-	SHOOTING: 'shooting',
-	PASSING: 'passing',
-	POSSESSING: 'possessing',
-	NORMAL: 'normal'
 };
 
 

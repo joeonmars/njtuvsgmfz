@@ -1,6 +1,7 @@
 var Utils = require( 'app/utils' );
 var Events = require( 'common/events' );
-var Player = require( 'entities/player' );
+var Entity = require( 'entities/entity' );
+var Stat = Entity.Stat;
 
 var _instance;
 
@@ -73,7 +74,7 @@ PlayerController.prototype.unsetPlayer = function() {
 
 	if ( this._player ) {
 
-		this._player.setState( Player.State.STANCE );
+		this._player.setStat( Stat.STANCE );
 		this._player = null;
 
 		this.disableKeys();
@@ -172,7 +173,7 @@ PlayerController.prototype.onUpLeft = function() {
 	} else if ( this._currentDirection === Phaser.LEFT ) {
 
 		this._currentDirection = null;
-		this._player.setState( Player.State.STANCE );
+		this._player.setStat( Stat.STANCE );
 	}
 };
 
@@ -190,7 +191,7 @@ PlayerController.prototype.onHoldLeft = function() {
 	if ( this._currentDirection === Phaser.LEFT ) {
 
 		this._player.face( Phaser.LEFT );
-		this._player.setState( Player.State.WALKING );
+		this._player.setStat( Stat.WALKING );
 	}
 };
 
@@ -228,7 +229,7 @@ PlayerController.prototype.onUpRight = function() {
 	} else if ( this._currentDirection === Phaser.RIGHT ) {
 
 		this._currentDirection = null;
-		this._player.setState( Player.State.STANCE );
+		this._player.setStat( Stat.STANCE );
 	}
 };
 
@@ -246,7 +247,7 @@ PlayerController.prototype.onHoldRight = function() {
 	if ( this._currentDirection === Phaser.RIGHT ) {
 
 		this._player.face( Phaser.RIGHT );
-		this._player.setState( Player.State.WALKING );
+		this._player.setStat( Stat.WALKING );
 	}
 };
 
@@ -260,15 +261,15 @@ PlayerController.prototype.onDownA = function() {
 
 	//console.log( 'down A' );
 
-	if ( this._player.isState( Player.State.WALKING ) ) {
+	if ( this._player.isStat( Stat.WALKING ) ) {
 
 		if ( this._player.hasBall && this._player.canDunk ) {
-			this._player.setState( Player.State.DUNKING );
+			this._player.setStat( Stat.DUNKING );
 			return;
 		}
 	}
 
-	this._player.setState( Player.State.JUMPING );
+	this._player.setStat( Stat.JUMPING );
 };
 
 
@@ -317,7 +318,7 @@ PlayerController.prototype.onDownD = function() {
 	//console.log( 'down D' );
 
 	if ( this._player.hasBall ) {
-		this._player.setState( Player.State.SHOOTING );
+		this._player.setStat( Stat.SHOOTING );
 	}
 };
 
