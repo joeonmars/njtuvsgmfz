@@ -6,7 +6,7 @@ var Events = require( 'common/events' );
  * The base player class.
  * @constructor
  */
-var Player = function( config, game, gameElements ) {
+var Player = function( game, config ) {
 
 	Phaser.Sprite.call( this, game, null, null, 'walk' );
 
@@ -18,6 +18,8 @@ var Player = function( config, game, gameElements ) {
 
 	this._minDragX = 0;
 	this._maxDragX = this.game.physics.p2.mpx( 8 );
+
+	this._acceleration = this.game.physics.p2.mpx( 2 );
 
 	this.anchor.setTo( .5, 1 );
 	this.height = game.physics.p2.mpx( config.height );
@@ -34,16 +36,17 @@ var Player = function( config, game, gameElements ) {
 	//
 	this.hasBall = false;
 	this.isInTheAir = false;
+	this.canDunk = this.config.dunk;
 	this.facing = Phaser.RIGHT;
 
-	this._gameElements = _.extendOwn( {
+	this._gameElements = {
 		floor: null,
 		ball: null,
 		ownBasket: null,
 		opponentBasket: null,
 		teammate: null,
 		opponents: null
-	}, gameElements );
+	};
 
 	this._state = null;
 	this._strategy = null;
@@ -64,6 +67,12 @@ var Player = function( config, game, gameElements ) {
 inherits( Player, Phaser.Sprite );
 
 
+Player.prototype.setGameElements = function( gameElements ) {
+
+	this._gameElements = _.extendOwn( this._gameElements, gameElements );
+}
+
+
 Player.prototype.setPosition = function( x, y ) {
 
 	this.x = x;
@@ -79,11 +88,14 @@ Player.prototype.setBodyRatio = function( rx, ry ) {
 }
 
 
-Player.prototype.calculateJumpVelocity = function( jump ) {
+Player.prototype.calculateJumpVelocity = function( jump, opt_velocityX ) {
+
+	var velocityFraction = Math.abs( opt_velocityX || 0 ) / this.body.maxVelocity.x;
+	var acceleratedJump = Phaser.Math.linearInterpolation( [ 0, this.game.physics.p2.mpx( -1 ) ], velocityFraction );
 
 	var minJump = this.game.physics.p2.mpx( -1.5 );
 	var maxJump = this.game.physics.p2.mpx( -4.5 );
-	return Phaser.Math.linearInterpolation( [ minJump, maxJump ], jump );
+	return Phaser.Math.linearInterpolation( [ minJump, maxJump ], jump ) + acceleratedJump;
 }
 
 
@@ -180,7 +192,6 @@ Player.prototype.faceOpponentBasket = function() {
 Player.prototype.stance = function() {
 
 	this.body.acceleration.x = 0;
-	this.body.acceleration.y = 0;
 
 	this.animations.play( 'stance' );
 }
@@ -189,15 +200,13 @@ Player.prototype.stance = function() {
 Player.prototype.walk = function() {
 
 	//http://hypertextbook.com/facts/2007/charlesbarkley.shtml
-	var acceleration = this.game.physics.p2.mpx( 2 );
-
 	if ( this.facing === Phaser.LEFT ) {
 
-		this.body.acceleration.x = -acceleration;
+		this.body.acceleration.x = -this._acceleration;
 
 	} else {
 
-		this.body.acceleration.x = acceleration;
+		this.body.acceleration.x = this._acceleration;
 	}
 
 	this.animations.play( 'walk' );
@@ -212,8 +221,11 @@ Player.prototype.jump = function() {
 
 	this.isInTheAir = true;
 
-	var jumpVelocity = this.calculateJumpVelocity( this.config.jump );
+	var jumpVelocity = this.calculateJumpVelocity( this.config.jump, this.body.velocity.x );
 	this.body.velocity.y = jumpVelocity;
+
+	this.body.acceleration.x = 0;
+	this.body.velocity.x *= .5;
 
 	this.animations.play( 'stance' );
 }
@@ -232,8 +244,7 @@ Player.prototype.shoot = function() {
 	// adjust facing towards basket before shooting
 	this.faceOpponentBasket();
 
-	var halfWidth = Math.abs( this.width / 2 );
-	var startX = ( this.facing === Phaser.LEFT ) ? this.x - halfWidth - ballRadius : this.x + halfWidth + ballRadius;
+	var startX = this.x;
 	var startY = this.y - this.height - ballRadius;
 	var targetX = basket.x;
 	var targetY = basket.y - basket.height / 2;
@@ -246,7 +257,7 @@ Player.prototype.shoot = function() {
 
 Player.prototype.dunk = function() {
 
-	if ( !this.hasBall || this.isInTheAir ) {
+	if ( !this.hasBall || this.isInTheAir || !this.canDunk ) {
 		return;
 	}
 
@@ -264,7 +275,9 @@ Player.prototype.dunk = function() {
 
 	var distanceX = this.x - finalPosition.x;
 	var halfDistance = distanceX / 2;
-	var highestPosition = new Phaser.Point( finalPosition.x + halfDistance, basket.y - this.game.physics.p2.mpx( .5 ) );
+	var baseY = basket.y + this.height;
+	var extraY = Phaser.Math.linearInterpolation( [ 0, this.game.physics.p2.mpx( 1 ) ], this.config.jump );
+	var highestPosition = new Phaser.Point( finalPosition.x + halfDistance, baseY - extraY );
 
 	var rad = Phaser.Math.angleBetweenPoints( highestPosition, this.position );
 
@@ -283,16 +296,10 @@ Player.prototype.dunk = function() {
 	var velocityX = -v * Math.cos( rad ) * direction;
 	var velocityY = -v * Math.sin( rad );
 
-	var startX = this.x;
-	var startY = this.y;
-
 	this.body.acceleration.x = 0;
-	this.body.acceleration.y = 0;
 
 	this.body.velocity.x = velocityX;
 	this.body.velocity.y = velocityY;
-
-	//this.setState( Player.State.STANCE );
 }
 
 
@@ -301,6 +308,13 @@ Player.prototype.update = function() {
 	this.isInTheAir = !this.game.physics.arcade.collide( this, this._gameElements.floor, this.onCollideWithFloor, null, this );
 
 	this.body.drag.x = this.isInTheAir ? this._minDragX : this._maxDragX;
+
+	var ball = this._gameElements.ball;
+
+	if ( ball.exists && ball.overlap( this ) ) {
+
+		Events.ballCaught.dispatch( this );
+	}
 
 	switch ( this._state ) {
 		case Player.State.STANCE:

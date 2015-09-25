@@ -54,8 +54,9 @@ Playground.prototype.create = function() {
 	this.floor.body.setSize( this.worldW, this.floorH );
 
 	// create tiling sky
-	this.sky = this.add.tileSprite( 0, 0, this.worldW, this.floorY, 'sky' );
-	this.sky.tileScale.x = this.sky.tileScale.y = ( this.floorY / 1024 );
+	var skyHeight = this.floorY - 30;
+	this.sky = this.add.tileSprite( 0, 0, this.worldW, skyHeight, 'sky' );
+	this.sky.tileScale.x = this.sky.tileScale.y = ( skyHeight / 1024 );
 
 	// create floor
 	this.floorBody = this.physics.p2.createBody( 0, this.floorY, 0, true, {}, [
@@ -68,9 +69,9 @@ Playground.prototype.create = function() {
 
 	// create net & backboard
 	this.net = this.add.sprite( 0, 0, 'net' );
-	this.physics.p2.enable( this.net, true );
+	this.physics.p2.enable( this.net );
 
-	this.netY = this.floorY - this.physics.p2.mpx( 3.048 ) + this.net.height / 2;
+	this.netY = this.floorY - this.physics.p2.mpx( 3.05 ) - this.net.height / 2;
 	this.net.body.reset( 70, this.netY );
 	this.net.body.static = true;
 	this.net.body.clearShapes();
@@ -80,35 +81,54 @@ Playground.prototype.create = function() {
 	this.net.input.enableDrag();
 	this.net.events.onDragStart.add( this.onBasketDragStart, this );
 
-	this.backboard = this.add.sprite( 0, this.netY - this.physics.p2.mpx( .5 ), 'backboard' );
-	this.physics.p2.enable( this.backboard, true );
+	var backboardHalfH = this.physics.p2.mpx( 1.95 ) / 2;
+	var backboardY = this.floorY - this.physics.p2.mpx( 2.9 ) - backboardHalfH;
+	this.backboard = this.add.sprite( 0, backboardY, 'backboard' );
+	this.physics.p2.enable( this.backboard );
 	this.backboard.body.static = true;
-
-	this.basketGroup = this.game.add.group();
-	this.basketGroup.addChild( this.net );
-	this.basketGroup.addChild( this.backboard );
 
 	// create ball
 	this.ball = new Ball( this.game, 0, 0, 'ball' );
 	this.ball.setPosition( this.worldW / 10, this.floorY - this.physics.p2.mpx( 1 ) );
 	this.world.add( this.ball );
 
-	// create player
-	var playerConfig = PlayerConfig[ 'zcw' ];
+	// create players
+	// player 1
+	var playerConfig = PlayerConfig[ 'ls' ];
 	var playerX = this.game.width - 200;
 	var playerY = this.floorY;
 
-	this.player = new Player( playerConfig, this.game, {
-		floor: this.floor,
-		ball: this.ball,
-		opponentBasket: this.net
-	} );
-
+	this.player = new Player( this.game, playerConfig );
 	this.player.setPosition( playerX, playerY );
 	this.world.add( this.player );
 
+	// player 2
+	var playerConfig = PlayerConfig[ 'zyw' ];
+	var playerX = this.game.width + 200;
+	var playerY = this.floorY;
+
+	this.player2 = new Player( this.game, playerConfig );
+	this.player2.setPosition( playerX, playerY );
+	this.world.add( this.player2 );
+
+	// set game elements to players
+	this.player.setGameElements( {
+		floor: this.floor,
+		ball: this.ball,
+		teammate: this.player2,
+		opponentBasket: this.net
+	} );
+
+	this.player2.setGameElements( {
+		floor: this.floor,
+		ball: this.ball,
+		teammate: this.player,
+		opponentBasket: this.net
+	} );
+
+	// create the player controller
 	this.playerController = new PlayerController( this.input );
-	this.playerController.setPlayer( this.player );
+	this.playerController.assignPlayers( this.player, this.player2 );
 
 	// create materials
 	this.ballMaterial = this.physics.p2.createMaterial( 'ball', this.ball.body );
@@ -171,10 +191,6 @@ Playground.prototype.update = function() {
 
 		this.net.body.x = worldX + this.netDragOffset.x;
 		this.net.body.y = worldY + this.netDragOffset.y;
-	}
-
-	if ( this.ball.exists && this.ball.overlap( this.player ) ) {
-		Events.ballCaught.dispatch( this.player );
 	}
 
 	if ( this.circle ) {

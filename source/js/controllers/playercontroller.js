@@ -1,4 +1,5 @@
 var Utils = require( 'app/utils' );
+var Events = require( 'common/events' );
 var Player = require( 'entities/player' );
 
 var _instance;
@@ -8,6 +9,8 @@ var PlayerController = function( input ) {
 
 	this.input = input;
 
+	this._player1 = null;
+	this._player2 = null;
 	this._player = null;
 
 	this._keyMappings = {
@@ -45,6 +48,16 @@ var PlayerController = function( input ) {
 	this._holdingDirection = {};
 	this._holdingDirection[ Phaser.LEFT ] = false;
 	this._holdingDirection[ Phaser.RIGHT ] = false;
+
+	Events.ballCaught.add( this.onBallCaught, this );
+};
+
+
+PlayerController.prototype.assignPlayers = function() {
+
+	this._player1 = arguments[ 0 ];
+	this._player2 = arguments[ 1 ];
+	this.setPlayer( this._player1 );
 };
 
 
@@ -58,9 +71,13 @@ PlayerController.prototype.setPlayer = function( player ) {
 
 PlayerController.prototype.unsetPlayer = function() {
 
-	this._player = null;
+	if ( this._player ) {
 
-	this.disableKeys();
+		this._player.setState( Player.State.STANCE );
+		this._player = null;
+
+		this.disableKeys();
+	}
 };
 
 
@@ -76,6 +93,10 @@ PlayerController.prototype.disableKeys = function() {
 	}, this );
 
 	this._keys = [];
+
+	this._currentDirection = null;
+	this._holdingDirection[ Phaser.LEFT ] = false;
+	this._holdingDirection[ Phaser.RIGHT ] = false;
 };
 
 
@@ -106,6 +127,18 @@ PlayerController.prototype.enableKeys = function() {
 	}, this );
 };
 
+
+PlayerController.prototype.onBallCaught = function( player ) {
+
+	if ( player !== this._player1 && player !== this._player2 ) {
+		return;
+	}
+
+	this.unsetPlayer();
+	this.setPlayer( player );
+};
+
+
 /**
  * Keyboard LEFT
  */
@@ -117,7 +150,6 @@ PlayerController.prototype.onDownLeft = function() {
 		return;
 	}
 
-	this._player.face( Phaser.LEFT );
 	this._currentDirection = Phaser.LEFT;
 };
 
@@ -157,6 +189,7 @@ PlayerController.prototype.onHoldLeft = function() {
 
 	if ( this._currentDirection === Phaser.LEFT ) {
 
+		this._player.face( Phaser.LEFT );
 		this._player.setState( Player.State.WALKING );
 	}
 };
@@ -173,7 +206,6 @@ PlayerController.prototype.onDownRight = function() {
 		return;
 	}
 
-	this._player.face( Phaser.RIGHT );
 	this._currentDirection = Phaser.RIGHT;
 };
 
@@ -213,6 +245,7 @@ PlayerController.prototype.onHoldRight = function() {
 
 	if ( this._currentDirection === Phaser.RIGHT ) {
 
+		this._player.face( Phaser.RIGHT );
 		this._player.setState( Player.State.WALKING );
 	}
 };
@@ -229,7 +262,7 @@ PlayerController.prototype.onDownA = function() {
 
 	if ( this._player.isState( Player.State.WALKING ) ) {
 
-		if ( this._player.hasBall ) {
+		if ( this._player.hasBall && this._player.canDunk ) {
 			this._player.setState( Player.State.DUNKING );
 			return;
 		}
