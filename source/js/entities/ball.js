@@ -27,27 +27,71 @@ var Ball = function( game, x, y, key, frame ) {
 	this.inputEnabled = true;
 	this.input.enableDrag();
 
-	Events.ballCaught.add( this.onCaught, this );
-	Events.ballShot.add( this.onShot, this );
-
 	// gameplay relevant properties
 	this._player = null;
+	this._state = null;
+
+	this._gameElements = {
+		floorBody: null,
+		baskets: null
+	};
+
+	this._floorBodyId = null;
+	this._basketBodyIds = null;
 
 	// projectile properties
 	this.velocityX = 0;
 	this.velocityY = 0;
 	this.startX = 0;
 	this.startY = 0;
+
+	// init
+	Events.ballCaught.add( this.onCaught, this );
+	Events.ballShot.add( this.onShot, this );
+
+	this.body.onBeginContact.add( this.onBeginContact, this );
+
+	this.setState( Ball.State.NORMAL );
 };
 inherits( Ball, Phaser.Sprite );
+
+
+Ball.prototype.setGameElements = function( gameElements ) {
+
+	this._gameElements = _.extendOwn( this._gameElements, gameElements );
+
+	this._floorBodyId = this._gameElements.floorBody.id;
+
+	this._basketBodyIds = _.map( this._gameElements.baskets, function( basket ) {
+		return basket.body.id;
+	} );
+};
 
 
 Ball.prototype.setPosition = function( x, y ) {
 
 	this.x = x;
 	this.y = y;
-	this.body.x = x;
-	this.body.y = y;
+	this.reset( x, y );
+};
+
+
+Ball.prototype.setState = function( state ) {
+
+	//console.log( 'Ball state: ' + state );
+	this._state = state;
+};
+
+
+Ball.prototype.getState = function() {
+
+	return this._state;
+};
+
+
+Ball.prototype.isState = function( state ) {
+
+	return this._state === state;
 };
 
 
@@ -85,7 +129,9 @@ Ball.prototype.shoot = function( finalPosition ) {
 
 	var impulse = [ this.velocityX, this.velocityY ];
 	this.body.applyImpulse( impulse, this.x, this.y );
-}
+
+	this.setState( Ball.State.SHOOTING );
+};
 
 
 Ball.prototype.getInitialVelocity = function( startPosition, finalPosition, deg ) {
@@ -108,7 +154,7 @@ Ball.prototype.getInitialVelocity = function( startPosition, finalPosition, deg 
 		' m, final y: ' + y1 + ' m.' );
 
 	return v0;
-}
+};
 
 
 Ball.prototype.getPredictedY = function( worldX ) {
@@ -128,7 +174,7 @@ Ball.prototype.getPredictedY = function( worldX ) {
 	var worldY = this.game.physics.p2.mpx( this.game.physics.p2.pxm( this.startY ) - displacementY );
 
 	return worldY;
-}
+};
 
 
 Ball.prototype.update = function() {
@@ -140,7 +186,7 @@ Ball.prototype.update = function() {
 		var pointer = this.input.game.input.activePointer;
 		this.body.reset( pointer.worldX, pointer.worldY );
 	}
-}
+};
 
 
 Ball.prototype.onCaught = function( player ) {
@@ -148,7 +194,9 @@ Ball.prototype.onCaught = function( player ) {
 	this._player = player;
 
 	this.exists = false;
-}
+
+	this.setState( Ball.State.POSSESSING );
+};
 
 
 Ball.prototype.onShot = function( player, startX, startY, targetX, targetY ) {
@@ -163,7 +211,33 @@ Ball.prototype.onShot = function( player, startX, startY, targetX, targetY ) {
 		x: targetX,
 		y: targetY
 	} );
-}
+};
+
+
+Ball.prototype.onBeginContact = function( bodyA, bodyB ) {
+
+	var contactBodyId = bodyB.id;
+
+	var hitFloor = ( contactBodyId === this._floorBodyId );
+	var hitBasket = _.contains( this._basketBodyIds, contactBodyId );
+
+	if ( hitFloor ) {
+
+		this.setState( Ball.State.NORMAL );
+
+	} else if ( hitBasket ) {
+
+		this.setState( Ball.State.NORMAL );
+	}
+};
+
+
+Ball.State = {
+	SHOOTING: 'shooting',
+	PASSING: 'passing',
+	POSSESSING: 'possessing',
+	NORMAL: 'normal'
+};
 
 
 module.exports = Ball;

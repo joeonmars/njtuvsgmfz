@@ -70,22 +70,21 @@ inherits( Player, Phaser.Sprite );
 Player.prototype.setGameElements = function( gameElements ) {
 
 	this._gameElements = _.extendOwn( this._gameElements, gameElements );
-}
+};
 
 
 Player.prototype.setPosition = function( x, y ) {
 
 	this.x = x;
 	this.y = y;
-	this.body.x = x;
-	this.body.y = y;
-}
+	this.body.reset( x, y );
+};
 
 
 Player.prototype.setBodyRatio = function( rx, ry ) {
 
 	this.body.setSize( this.width / this.scale.x * rx, this.height / this.scale.y * ry );
-}
+};
 
 
 Player.prototype.calculateJumpVelocity = function( jump, opt_velocityX ) {
@@ -96,7 +95,7 @@ Player.prototype.calculateJumpVelocity = function( jump, opt_velocityX ) {
 	var minJump = this.game.physics.p2.mpx( -1.5 );
 	var maxJump = this.game.physics.p2.mpx( -4.5 );
 	return Phaser.Math.linearInterpolation( [ minJump, maxJump ], jump ) + acceleratedJump;
-}
+};
 
 
 Player.prototype.calculateMaxSpeed = function( sprint ) {
@@ -104,7 +103,7 @@ Player.prototype.calculateMaxSpeed = function( sprint ) {
 	var minSpeed = this.game.physics.p2.mpx( 2.5 );
 	var maxSpeed = this.game.physics.p2.mpx( 5.5 );
 	return Phaser.Math.linearInterpolation( [ minSpeed, maxSpeed ], sprint );
-}
+};
 
 
 Player.prototype.calculateDampingByWeight = function( weight ) {
@@ -112,33 +111,38 @@ Player.prototype.calculateDampingByWeight = function( weight ) {
 	var minWeight = 60;
 	var maxWeight = 100;
 	return Phaser.Math.linearInterpolation( [ 0, .8 ], ( weight - minWeight ) / ( maxWeight - minWeight ) );
-}
+};
 
 
 Player.prototype.setStrategy = function( strategy ) {
 
 	this._strategy = strategy;
-}
+};
 
 
 Player.prototype.setState = function( state ) {
 
-	//console.log( 'current state: ' + state );
-
+	//console.log( 'Player ' + this.id + ' state: ' + state );
 	this._state = state;
-}
+};
+
+
+Player.prototype.getState = function() {
+
+	return this._state;
+};
 
 
 Player.prototype.isState = function( state ) {
 
 	return this._state === state;
-}
+};
 
 
 Player.prototype.isStrategy = function( strategy ) {
 
 	return this._strategy === strategy;
-}
+};
 
 
 Player.prototype.getInitialVelocity = function( startPosition, finalPosition, deg ) {
@@ -161,7 +165,7 @@ Player.prototype.getInitialVelocity = function( startPosition, finalPosition, de
 		' m, final y: ' + y1 + ' m.' );
 
 	return v0;
-}
+};
 
 
 Player.prototype.face = function( facing ) {
@@ -178,7 +182,7 @@ Player.prototype.face = function( facing ) {
 	this.body.velocity.x = 0;
 
 	Events.facingChanged.dispatch( this, facing );
-}
+};
 
 
 Player.prototype.faceOpponentBasket = function() {
@@ -186,7 +190,7 @@ Player.prototype.faceOpponentBasket = function() {
 	var basket = this._gameElements.opponentBasket;
 	var facing = ( this.x > basket.x ) ? Phaser.LEFT : Phaser.RIGHT;
 	this.face( facing );
-}
+};
 
 
 Player.prototype.stance = function() {
@@ -194,7 +198,7 @@ Player.prototype.stance = function() {
 	this.body.acceleration.x = 0;
 
 	this.animations.play( 'stance' );
-}
+};
 
 
 Player.prototype.walk = function() {
@@ -210,7 +214,7 @@ Player.prototype.walk = function() {
 	}
 
 	this.animations.play( 'walk' );
-}
+};
 
 
 Player.prototype.jump = function() {
@@ -228,7 +232,7 @@ Player.prototype.jump = function() {
 	this.body.velocity.x *= .5;
 
 	this.animations.play( 'stance' );
-}
+};
 
 
 Player.prototype.shoot = function() {
@@ -252,7 +256,7 @@ Player.prototype.shoot = function() {
 	Events.ballShot.dispatch( ball, startX, startY, targetX, targetY );
 
 	this.setState( Player.State.STANCE );
-}
+};
 
 
 Player.prototype.dunk = function() {
@@ -300,7 +304,7 @@ Player.prototype.dunk = function() {
 
 	this.body.velocity.x = velocityX;
 	this.body.velocity.y = velocityY;
-}
+};
 
 
 Player.prototype.update = function() {
@@ -340,7 +344,7 @@ Player.prototype.update = function() {
 		default:
 			break;
 	}
-}
+};
 
 
 Player.prototype.onCollideWithFloor = function() {
@@ -350,7 +354,7 @@ Player.prototype.onCollideWithFloor = function() {
 
 		this.setState( Player.State.STANCE );
 	}
-}
+};
 
 
 Player.prototype.onCaught = function( player ) {
@@ -369,7 +373,7 @@ Player.prototype.onCaught = function( player ) {
 
 		Events.strategyChanged.dispatch( ownTeam, Player.Strategy.DEFENSE );
 	}
-}
+};
 
 
 Player.prototype.onDropped = function( player ) {
@@ -380,7 +384,7 @@ Player.prototype.onDropped = function( player ) {
 	var ownTeam = [ this, this._gameElements.teammate ];
 
 	Events.strategyChanged.dispatch( ownTeam, Player.Strategy.COMPETE );
-}
+};
 
 
 Player.prototype.onShot = function( player, x, y ) {
@@ -391,7 +395,7 @@ Player.prototype.onShot = function( player, x, y ) {
 	var ownTeam = [ this, this._gameElements.teammate ];
 
 	Events.strategyChanged.dispatch( ownTeam, Player.Strategy.COMPETE );
-}
+};
 
 
 Player.prototype.onStrategyChanged = function( team, strategy ) {
@@ -402,7 +406,7 @@ Player.prototype.onStrategyChanged = function( team, strategy ) {
 
 		this.setStrategy( strategy );
 	}
-}
+};
 
 
 Player.State = {

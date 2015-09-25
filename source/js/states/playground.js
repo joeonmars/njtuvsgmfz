@@ -9,7 +9,6 @@ var Events = require( 'common/events' );
 // Glossary: https://en.wikipedia.org/wiki/Glossary_of_basketball_terms
 var Playground = function() {
 
-	this.net = null;
 };
 inherits( Playground, Phaser.State );
 
@@ -59,27 +58,27 @@ Playground.prototype.create = function() {
 	this.sky.tileScale.x = this.sky.tileScale.y = ( skyHeight / 1024 );
 
 	// create floor
-	this.floorBody = this.physics.p2.createBody( 0, this.floorY, 0, true, {}, [
+	this.floorP2Body = this.physics.p2.createBody( 0, this.floorY, 0, true, {}, [
 		[ 0, 0 ],
 		[ this.worldW, 0 ],
 		[ this.worldW, this.floorH ],
 		[ 0, this.floorH ]
 	] );
-	//this.floorBody.debug = true;
+	//this.floorP2Body.debug = true;
 
 	// create net & backboard
-	this.net = this.add.sprite( 0, 0, 'net' );
-	this.physics.p2.enable( this.net );
+	this.basket = this.add.sprite( 0, 0, 'net' );
+	this.physics.p2.enable( this.basket );
 
-	this.netY = this.floorY - this.physics.p2.mpx( 3.05 ) - this.net.height / 2;
-	this.net.body.reset( 70, this.netY );
-	this.net.body.static = true;
-	this.net.body.clearShapes();
-	this.net.body.loadPolygon( 'net', 'basketball-net-small' );
+	this.basketY = this.floorY - this.physics.p2.mpx( 3.05 ) - this.basket.height / 2;
+	this.basket.body.reset( 70, this.basketY );
+	this.basket.body.static = true;
+	this.basket.body.clearShapes();
+	this.basket.body.loadPolygon( 'net', 'basketball-net-small' );
 
-	this.net.inputEnabled = true;
-	this.net.input.enableDrag();
-	this.net.events.onDragStart.add( this.onBasketDragStart, this );
+	this.basket.inputEnabled = true;
+	this.basket.input.enableDrag();
+	this.basket.events.onDragStart.add( this.onBasketDragStart, this );
 
 	var backboardHalfH = this.physics.p2.mpx( 1.95 ) / 2;
 	var backboardY = this.floorY - this.physics.p2.mpx( 2.9 ) - backboardHalfH;
@@ -98,9 +97,9 @@ Playground.prototype.create = function() {
 	var playerX = this.game.width - 200;
 	var playerY = this.floorY;
 
-	this.player = new Player( this.game, playerConfig );
-	this.player.setPosition( playerX, playerY );
-	this.world.add( this.player );
+	this.player1 = new Player( this.game, playerConfig );
+	this.player1.setPosition( playerX, playerY );
+	this.world.add( this.player1 );
 
 	// player 2
 	var playerConfig = PlayerConfig[ 'zyw' ];
@@ -111,30 +110,35 @@ Playground.prototype.create = function() {
 	this.player2.setPosition( playerX, playerY );
 	this.world.add( this.player2 );
 
-	// set game elements to players
-	this.player.setGameElements( {
+	// set game elements to entities
+	this.ball.setGameElements( {
+		floorBody: this.floorP2Body,
+		baskets: [ this.basket ]
+	} );
+
+	this.player1.setGameElements( {
 		floor: this.floor,
 		ball: this.ball,
 		teammate: this.player2,
-		opponentBasket: this.net
+		opponentBasket: this.basket
 	} );
 
 	this.player2.setGameElements( {
 		floor: this.floor,
 		ball: this.ball,
-		teammate: this.player,
-		opponentBasket: this.net
+		teammate: this.player1,
+		opponentBasket: this.basket
 	} );
 
 	// create the player controller
 	this.playerController = new PlayerController( this.input );
-	this.playerController.assignPlayers( this.player, this.player2 );
+	this.playerController.assignPlayers( this.player1, this.player2 );
 
 	// create materials
 	this.ballMaterial = this.physics.p2.createMaterial( 'ball', this.ball.body );
-	this.floorMaterial = this.physics.p2.createMaterial( 'floor', this.floorBody );
+	this.floorMaterial = this.physics.p2.createMaterial( 'floor', this.floorP2Body );
 	this.backboardMaterial = this.physics.p2.createMaterial( 'backboard', this.backboard.body );
-	this.rimMaterial = this.physics.p2.createMaterial( 'rim', this.net.body );
+	this.rimMaterial = this.physics.p2.createMaterial( 'rim', this.basket.body );
 
 	this.ballVsFloorMaterial = this.physics.p2.createContactMaterial( this.ballMaterial, this.floorMaterial );
 	this.ballVsFloorMaterial.restitution = 0.85;
@@ -153,10 +157,7 @@ Playground.prototype.create = function() {
 
 	//
 	this.backboardDragOffset = null;
-	this.netDragOffset = null;
-
-	this.spacebarKey = this.input.keyboard.addKey( Phaser.Keyboard.SPACEBAR );
-	this.spacebarKey.onDown.add( this.shoot, this );
+	this.basketDragOffset = null;
 
 	// debug
 	this.circle = null;
@@ -168,20 +169,9 @@ Playground.prototype.create = function() {
 };
 
 
-Playground.prototype.shoot = function() {
-
-	var target = this.net.position.clone();
-	target.y -= this.net.height / 2;
-
-	if ( !this.player.hasBall ) {
-		Events.ballShot.dispatch( this.ball, this.ball.x, this.ball.y, target.x, target.y );
-	}
-};
-
-
 Playground.prototype.update = function() {
 
-	if ( this.net.input.isDragged ) {
+	if ( this.basket.input.isDragged ) {
 
 		var worldX = this.input.activePointer.worldX;
 		var worldY = this.input.activePointer.worldY;
@@ -189,30 +179,39 @@ Playground.prototype.update = function() {
 		this.backboard.body.x = worldX + this.backboardDragOffset.x;
 		this.backboard.body.y = worldY + this.backboardDragOffset.y;
 
-		this.net.body.x = worldX + this.netDragOffset.x;
-		this.net.body.y = worldY + this.netDragOffset.y;
+		this.basket.body.x = worldX + this.basketDragOffset.x;
+		this.basket.body.y = worldY + this.basketDragOffset.y;
 	}
 
 	if ( this.circle ) {
 		this.game.debug.geom( this.circle, 'rgba(255, 255, 0, .5)' );
 	}
+};
 
-	//this.game.debug.body( this.player );
+
+Playground.prototype.render = function() {
+
+	this.game.debug.start( 20, 20 );
+	this.game.debug.line( 'Player 1 state: ' + this.player1.getState() );
+	this.game.debug.line( 'Player 2 state: ' + this.player2.getState() );
+	this.game.debug.line( 'Ball state: ' + this.ball.getState() );
+	//this.game.debug.body( this.player1 );
 	//this.game.debug.body( this.floor );
+	this.game.debug.stop();
 };
 
 
 Playground.prototype.onBasketDragStart = function( sprite, pointer, x, y ) {
 
 	this.backboardDragOffset = new Phaser.Point( this.backboard.x - pointer.worldX, this.backboard.y - pointer.worldY );
-	this.netDragOffset = new Phaser.Point( this.net.x - pointer.worldX, this.net.y - pointer.worldY );
+	this.basketDragOffset = new Phaser.Point( this.basket.x - pointer.worldX, this.basket.y - pointer.worldY );
 };
 
 
 Playground.prototype.onBallShot = function() {
 
 	// test projectile prediction...
-	this.predictX = this.player.x;
+	this.predictX = this.player1.x;
 	this.predictY = this.ball.getPredictedY( this.predictX );
 
 	if ( _.isNumber( this.predictY ) ) {
