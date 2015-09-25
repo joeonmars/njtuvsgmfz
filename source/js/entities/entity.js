@@ -90,7 +90,8 @@ Entity.Stat = {
 	DUNKING: 'dunking',
 	SHOOTING: 'shooting',
 	PASSING: 'passing',
-	POSSESSING: 'possessing'
+	POSSESSING: 'possessing',
+	SCORED: 'scored'
 };
 
 

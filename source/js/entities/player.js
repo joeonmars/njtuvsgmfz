@@ -256,7 +256,11 @@ Player.prototype.dunk = function() {
 Player.prototype.detectBallCollision = function() {
 
 	var ball = this._gameElements.ball;
-	var canCollide = ball.exists && ball.isStat( Stat.NORMAL );
+	var canCollide = ball.exists;
+
+	if ( !ball.isStat( Stat.NORMAL ) ) {
+		canCollide = false;
+	}
 
 	if ( canCollide && ball.overlap( this ) ) {
 
@@ -270,6 +274,7 @@ Player.prototype.update = function() {
 	Entity.prototype.update.call( this );
 
 	this.isInTheAir = !this.game.physics.arcade.collide( this, this._gameElements.floor, this.onCollideWithFloor, null, this );
+	this.immovable = this.isStat( Stat.DUNKING );
 
 	this.body.drag.x = this.isInTheAir ? this._minDragX : this._maxDragX;
 

@@ -76,8 +76,18 @@ CameraTracker.prototype.update = function() {
 
 	if ( this._object ) {
 
-		this.x += ( this._object.x - this.x + this._offsetX ) * this._ease;
-		this.y += ( this._object.y - this.y + this._offsetY ) * this._ease;
+		// limit the focus not to exceed half screen size
+		var gameHalfW = this.game.width / 2;
+		var clampedFocusX = Phaser.Math.clamp( this._object.x + this._offsetX,
+			gameHalfW, this.game.world.width - gameHalfW );
+
+		//this.game.debug.pixel( clampedFocusX + this.game.world.x, 400, '#ff4400', 10 );
+
+		var offsetX = clampedFocusX - this._object.x;
+		var offsetY = this._offsetY;
+
+		this.x += ( this._object.x - this.x + offsetX ) * this._ease;
+		this.y += ( this._object.y - this.y + offsetY ) * this._ease;
 	}
 }
 

@@ -1,10 +1,12 @@
 var inherits = require( 'inherits' );
+var Events = require( 'common/events' );
 var Ball = require( 'entities/ball' );
-var Player = require( 'entities/player' );
 var CameraTracker = require( 'entities/cameratracker' );
+var Player = require( 'entities/player' );
 var PlayerController = require( 'controllers/playercontroller' );
 var PlayerConfig = require( 'common/players' );
-var Events = require( 'common/events' );
+var Statistics = require( 'controllers/statistics' );
+
 
 // Glossary: https://en.wikipedia.org/wiki/Glossary_of_basketball_terms
 var Playground = function() {
@@ -154,6 +156,10 @@ Playground.prototype.create = function() {
 	this.world.add( this.cameraTracker );
 
 	this.cameraTracker.follow( this.ball );
+
+	// statistics
+	this.statistics = new Statistics();
+	this.statistics.recordStart( this.player1, this.player2 );
 
 	//
 	this.backboardDragOffset = null;
