@@ -53,8 +53,21 @@ Ball.prototype.init = function( x, y ) {
 
 	Events.ballCaught.add( this.onCaught, this );
 	Events.ballShot.add( this.onShot, this );
+	Events.ballPassed.add( this.onPassed, this );
 
 	this.body.onBeginContact.add( this.onBeginContact, this );
+};
+
+
+Ball.prototype.destroy = function() {
+
+	Entity.prototype.destroy.call( this );
+
+	Events.ballCaught.remove( this.onCaught, this );
+	Events.ballShot.remove( this.onShot, this );
+	Events.ballPassed.remove( this.onPassed, this );
+
+	this.body.onBeginContact.remove( this.onBeginContact, this );
 };
 
 
@@ -90,6 +103,9 @@ Ball.prototype.shoot = function( finalPosition ) {
 		return;
 	}
 
+	// cap ball's max speed to 10m/s
+	v = Math.min( v, 10 );
+
 	rad = Phaser.Math.degToRad( deg );
 
 	var direction = ( this.position.x > finalPosition.x ) ? 1 : -1;
@@ -106,6 +122,48 @@ Ball.prototype.shoot = function( finalPosition ) {
 	this.body.applyImpulse( impulse, this.x, this.y );
 
 	this.setStat( Stat.SHOOTING );
+};
+
+
+Ball.prototype.pass = function( finalPosition ) {
+
+	var distanceX = this.position.x - finalPosition.x;
+	var halfDistance = distanceX / 2;
+	var highestPosition = new Phaser.Point( finalPosition.x + halfDistance, finalPosition.y - Math.abs( halfDistance ) - this.height );
+
+	var rad = Phaser.Math.angleBetweenPoints( highestPosition, this.position );
+
+	var deg = Phaser.Math.radToDeg( rad );
+	deg = ( deg > 90 ) ? 180 - deg : deg;
+
+	//console.log( deg );
+	//deg = 45;
+
+	var v = this.getInitialVelocity( this.position, finalPosition, deg );
+
+	if ( !v ) {
+		return;
+	}
+
+	// cap ball's max speed to 10m/s
+	v = Math.min( v, 10 );
+
+	rad = Phaser.Math.degToRad( deg );
+
+	var direction = ( this.position.x > finalPosition.x ) ? 1 : -1;
+
+	this.velocityX = v * Math.cos( rad ) * direction;
+	this.velocityY = v * Math.sin( rad );
+
+	this.startX = this.x;
+	this.startY = this.y;
+
+	this.body.setZeroVelocity();
+
+	var impulse = [ this.velocityX, this.velocityY ];
+	this.body.applyImpulse( impulse, this.x, this.y );
+
+	this.setStat( Stat.PASSING );
 };
 
 
@@ -162,6 +220,22 @@ Ball.prototype.onShot = function( player, startX, startY, targetX, targetY ) {
 	this.exists = true;
 
 	this.shoot( {
+		x: targetX,
+		y: targetY
+	} );
+};
+
+
+Ball.prototype.onPassed = function( player, startX, startY, targetX, targetY ) {
+
+	//WIP
+	this._player = null;
+
+	this.setPosition( startX, startY );
+
+	this.exists = true;
+
+	this.pass( {
 		x: targetX,
 		y: targetY
 	} );

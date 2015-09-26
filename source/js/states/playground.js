@@ -222,7 +222,7 @@ Playground.prototype.onBallShot = function() {
 
 	if ( _.isNumber( this.predictY ) ) {
 
-		console.log( 'predicted y of x: ' + this.predictX + ', ' + this.predictY );
+		//console.log( 'predicted y of x: ' + this.predictX + ', ' + this.predictY );
 		this.circle = new Phaser.Circle( this.predictX, this.predictY, 20 );
 
 	} else {

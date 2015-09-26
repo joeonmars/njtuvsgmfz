@@ -16,8 +16,9 @@ var CameraTracker = function( game, x, y ) {
 	this._offsetX = 0;
 	this._offsetY = 0;
 
-	Events.ballCaught.add( this.onCaught, this );
-	Events.ballShot.add( this.onShot, this );
+	Events.ballCaught.add( this.onBallCaught, this );
+	Events.ballShot.add( this.onBallShot, this );
+	Events.ballPassed.add( this.onBallPassed, this );
 	Events.facingChanged.add( this.onFacingChanged, this );
 };
 inherits( CameraTracker, Phaser.Image );
@@ -36,13 +37,13 @@ CameraTracker.prototype.follow = function( displayObject ) {
 		var easingDuration = ( this._object.entityType === 'player' ) ? 10 : 5;
 		this.restartEasing( easingDuration );
 	}
-}
+};
 
 
 CameraTracker.prototype.unfollow = function() {
 
 	this._camera.unfollow();
-}
+};
 
 
 CameraTracker.prototype.restartEasing = function( duration ) {
@@ -53,7 +54,7 @@ CameraTracker.prototype.restartEasing = function( duration ) {
 		_ease: this._maxEase,
 		ease: Linear.easeNone
 	} );
-}
+};
 
 
 CameraTracker.prototype.updateOffsets = function() {
@@ -67,9 +68,9 @@ CameraTracker.prototype.updateOffsets = function() {
 
 		var direction = ( this._object.facing === Phaser.LEFT ) ? -1 : 1;
 		this._offsetX = Math.round( this.game.width / 5 ) * direction;
-		this._offsetY = 0;
+		this._offsetY = -this._object.height / 2;
 	}
-}
+};
 
 
 CameraTracker.prototype.update = function() {
@@ -89,26 +90,32 @@ CameraTracker.prototype.update = function() {
 		this.x += ( this._object.x - this.x + offsetX ) * this._ease;
 		this.y += ( this._object.y - this.y + offsetY ) * this._ease;
 	}
-}
+};
 
 
-CameraTracker.prototype.onCaught = function( player ) {
+CameraTracker.prototype.onBallCaught = function( player ) {
 
 	this.follow( player );
-}
+};
 
 
-CameraTracker.prototype.onShot = function( ball ) {
+CameraTracker.prototype.onBallShot = function( ball ) {
 
 	this.follow( ball );
-}
+};
+
+
+CameraTracker.prototype.onBallPassed = function( ball ) {
+
+	this.follow( ball );
+};
 
 
 CameraTracker.prototype.onFacingChanged = function( player, facing ) {
 
 	this.updateOffsets();
 	this.restartEasing( 10 );
-}
+};
 
 
 module.exports = CameraTracker;

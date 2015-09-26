@@ -139,6 +139,14 @@ Player.prototype.faceOpponentBasket = function() {
 };
 
 
+Player.prototype.faceTeammate = function() {
+
+	var teammate = this._gameElements.teammate;
+	var facing = ( this.x > teammate.x ) ? Phaser.LEFT : Phaser.RIGHT;
+	this.face( facing );
+};
+
+
 Player.prototype.stance = function() {
 
 	this.body.acceleration.x = 0;
@@ -181,17 +189,39 @@ Player.prototype.jump = function() {
 };
 
 
-Player.prototype.shoot = function() {
+Player.prototype.pass = function() {
 
-	if ( !this.hasBall ) {
+	var canPass = true;
+
+	if ( this.isStat( Stat.DUNKING ) ) {
+		canPass = false;
+	}
+
+	if ( !canPass ) {
 		return;
 	}
+
+	this.faceTeammate();
+
+	var ball = this._gameElements.ball;
+	var teammate = this._gameElements.teammate;
+	var startX = this.x;
+	var startY = this.y - this.height / 2;
+	var targetX = teammate.x;
+	var targetY = teammate.y - teammate.height / 2;
+
+	Events.ballPassed.dispatch( ball, startX, startY, targetX, targetY );
+
+	this.setStat( this.isInTheAir ? Stat.JUMPING : Stat.STANCE );
+};
+
+
+Player.prototype.shoot = function() {
 
 	var basket = this._gameElements.opponentBasket;
 	var ball = this._gameElements.ball;
 	var ballRadius = ball.width / 2;
 
-	// adjust facing towards basket before shooting
 	this.faceOpponentBasket();
 
 	var startX = this.x;
@@ -207,14 +237,13 @@ Player.prototype.shoot = function() {
 
 Player.prototype.dunk = function() {
 
-	if ( !this.hasBall || this.isInTheAir || !this.canDunk ) {
+	if ( this.isInTheAir ) {
 		return;
 	}
 
 	this.isInTheAir = true;
 
 	// WIP
-	// adjust facing towards basket before shooting
 	this.faceOpponentBasket();
 
 	var basket = this._gameElements.opponentBasket;
@@ -262,6 +291,14 @@ Player.prototype.detectBallCollision = function() {
 		canCollide = false;
 	}
 
+	if ( ball.isStat( Stat.PASSING ) ) {
+		canCollide = true;
+	}
+
+	if ( this.isStat( Stat.PASSING ) ) {
+		canCollide = false;
+	}
+
 	if ( canCollide && ball.overlap( this ) ) {
 
 		Events.ballCaught.dispatch( this );
@@ -300,6 +337,10 @@ Player.prototype.update = function() {
 
 		case Stat.DUNKING:
 			this.dunk();
+			break;
+
+		case Stat.PASSING:
+			this.pass();
 			break;
 
 		default:

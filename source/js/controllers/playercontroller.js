@@ -263,13 +263,16 @@ PlayerController.prototype.onDownA = function() {
 
 	if ( this._player.isStat( Stat.WALKING ) ) {
 
-		if ( this._player.hasBall && this._player.canDunk ) {
+		if ( this._player.hasBall && !this.isInTheAir && this._player.canDunk ) {
 			this._player.setStat( Stat.DUNKING );
 			return;
 		}
 	}
 
-	this._player.setStat( Stat.JUMPING );
+	if ( !this._player.isInTheAir ) {
+
+		this._player.setStat( Stat.JUMPING );
+	}
 };
 
 
@@ -293,6 +296,11 @@ PlayerController.prototype.onHoldA = function() {
 PlayerController.prototype.onDownS = function() {
 
 	//console.log( 'down S' );
+
+	if ( this._player.hasBall ) {
+
+		this._player.setStat( Stat.PASSING );
+	}
 };
 
 

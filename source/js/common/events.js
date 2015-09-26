@@ -2,6 +2,7 @@ var Events = {
 
 	ballCaught: new Phaser.Signal(),
 	ballShot: new Phaser.Signal(),
+	ballPassed: new Phaser.Signal(),
 	ballDropped: new Phaser.Signal(),
 
 	facingChanged: new Phaser.Signal(),

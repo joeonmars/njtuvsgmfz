@@ -67,11 +67,12 @@ Entity.prototype.getInitialVelocity = function( startPosition, finalPosition, de
 
 	var v0 = Math.sqrt( ( Math.pow( dx, 2 ) * .5 * -g ) / ( ( y1 - y0 - dx * Math.tan( rad ) ) * cos2 ) );
 
+	/*
 	console.log( 'initial velocity: ' + v0 +
 		' m/s^2, distance x: ' + dx +
 		' m, start y: ' + y0 +
 		' m, final y: ' + y1 + ' m.' );
-
+	*/
 	return v0;
 };
 
