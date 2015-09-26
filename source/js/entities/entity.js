@@ -78,21 +78,24 @@ Entity.prototype.getInitialVelocity = function( startPosition, finalPosition, de
 
 
 Entity.Type = {
-	PLAYER: 'player',
-	BALL: 'ball'
+	PLAYER: 'PLAYER',
+	BALL: 'BALL'
 };
 
+
 Entity.Stat = {
-	NORMAL: 'normal',
-	STANCE: 'stance',
-	WALKING: 'walking',
-	RUNNING: 'running',
-	JUMPING: 'jumping',
-	DUNKING: 'dunking',
-	SHOOTING: 'shooting',
-	PASSING: 'passing',
-	POSSESSING: 'possessing',
-	SCORED: 'scored'
+	/* Player */
+	STANCE: 'STANCE',
+	WALKING: 'WALKING',
+	JUMPING: 'JUMPING',
+	DUNKING: 'DUNKING',
+	/* Ball */
+	NORMAL: 'NORMAL',
+	POSSESSING: 'POSSESSING',
+	SCORED: 'SCORED',
+	/* Common */
+	SHOOTING: 'SHOOTING',
+	PASSING: 'PASSING'
 };
 
 

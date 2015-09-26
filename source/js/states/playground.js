@@ -39,7 +39,10 @@ Playground.prototype.create = function() {
 	this.physics.p2.gravity.y = gravity;
 	this.physics.arcade.gravity.y = gravity;
 
-	this.worldW = this.physics.p2.mpx( 26 );
+	var courtWidth = 26;
+	var extensionWidth = 2;
+
+	this.worldW = this.physics.p2.mpx( courtWidth + extensionWidth * 2 );
 	this.worldH = this.physics.p2.mpx( 10 );
 
 	this.floorH = this.physics.p2.mpx( .55 );
@@ -68,12 +71,20 @@ Playground.prototype.create = function() {
 	] );
 	//this.floorP2Body.debug = true;
 
-	// create net & backboard
+	// create backboard & basket
+	var backboardHalfH = this.physics.p2.mpx( 1.95 ) / 2;
+	var backboardX = extensionWidth + this.physics.p2.mpx( 1.22 );
+	var backboardY = this.floorY - this.physics.p2.mpx( 2.9 ) - backboardHalfH;
+	this.backboard = this.add.sprite( backboardX, backboardY, 'backboard' );
+	this.physics.p2.enable( this.backboard );
+	this.backboard.body.static = true;
+
 	this.basket = this.add.sprite( 0, 0, 'net' );
 	this.physics.p2.enable( this.basket );
 
-	this.basketY = this.floorY - this.physics.p2.mpx( 3.05 ) - this.basket.height / 2;
-	this.basket.body.reset( 70, this.basketY );
+	var basketX = backboardX + 70;
+	var basketY = this.floorY - this.physics.p2.mpx( 3.05 ) - this.basket.height / 2;
+	this.basket.body.reset( basketX, basketY );
 	this.basket.body.static = true;
 	this.basket.body.clearShapes();
 	this.basket.body.loadPolygon( 'net', 'basketball-net-small' );
@@ -81,12 +92,6 @@ Playground.prototype.create = function() {
 	this.basket.inputEnabled = true;
 	this.basket.input.enableDrag();
 	this.basket.events.onDragStart.add( this.onBasketDragStart, this );
-
-	var backboardHalfH = this.physics.p2.mpx( 1.95 ) / 2;
-	var backboardY = this.floorY - this.physics.p2.mpx( 2.9 ) - backboardHalfH;
-	this.backboard = this.add.sprite( 0, backboardY, 'backboard' );
-	this.physics.p2.enable( this.backboard );
-	this.backboard.body.static = true;
 
 	// create ball
 	this.ball = new Ball( this.game );

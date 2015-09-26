@@ -19,10 +19,9 @@ var Ball = function( game ) {
 	this.width = this.height = game.physics.p2.mpx( 0.25 );
 
 	this.body.setCircle( this.width / 2 );
-	this.body.fixedRotation = true;
 	this.body.mass = 1;
 	this.body.damping = 0;
-	this.body.angularDamping = 1;
+	this.body.angularDamping = .8;
 
 	this.inputEnabled = true;
 	this.input.enableDrag();
@@ -121,6 +120,8 @@ Ball.prototype.shoot = function( finalPosition ) {
 	var impulse = [ this.velocityX, this.velocityY ];
 	this.body.applyImpulse( impulse, this.x, this.y );
 
+	this.body.angularVelocity = v;
+
 	this.setStat( Stat.SHOOTING );
 };
 
@@ -129,7 +130,7 @@ Ball.prototype.pass = function( finalPosition ) {
 
 	var distanceX = this.position.x - finalPosition.x;
 	var halfDistance = distanceX / 2;
-	var highestPosition = new Phaser.Point( finalPosition.x + halfDistance, finalPosition.y - Math.abs( halfDistance ) - this.height );
+	var highestPosition = new Phaser.Point( finalPosition.x + halfDistance, finalPosition.y - Math.abs( halfDistance / 2 ) );
 
 	var rad = Phaser.Math.angleBetweenPoints( highestPosition, this.position );
 
@@ -162,6 +163,8 @@ Ball.prototype.pass = function( finalPosition ) {
 
 	var impulse = [ this.velocityX, this.velocityY ];
 	this.body.applyImpulse( impulse, this.x, this.y );
+
+	this.body.angularVelocity = v;
 
 	this.setStat( Stat.PASSING );
 };
@@ -226,7 +229,7 @@ Ball.prototype.onShot = function( player, startX, startY, targetX, targetY ) {
 };
 
 
-Ball.prototype.onPassed = function( player, startX, startY, targetX, targetY ) {
+Ball.prototype.onPassed = function( ball, playerA, playerB, startX, startY, targetX, targetY ) {
 
 	//WIP
 	this._player = null;

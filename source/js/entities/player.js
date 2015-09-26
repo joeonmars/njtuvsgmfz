@@ -49,7 +49,10 @@ var Player = function( game, config ) {
 	this._strategy = null;
 
 	this.animations.add( 'walk', [ 0, 1, 2, 3, 4, 5 ], 8, true );
-	this.animations.add( 'stance', [ 12 ] );
+	this.animations.add( 'stance', [ 12 ], 8, true );
+	this.animations.add( 'jump', [ 12 ], 8, false );
+	this.animations.add( 'pass', [ 12 ], 1, false );
+	this.animations.add( 'shoot', [ 12 ], 1, false );
 };
 inherits( Player, Entity );
 
@@ -64,14 +67,70 @@ Player.prototype.init = function( x, y ) {
 
 	Events.ballCaught.add( this.onCaught, this );
 	Events.ballShot.add( this.onShot, this );
+	Events.ballPassed.add( this.onPassed, this );
 	Events.ballDropped.add( this.onDropped, this );
 	Events.strategyChanged.add( this.onStrategyChanged, this );
+
+	this.events.onAnimationComplete.add( this.onAnimationComplete, this );
+};
+
+
+Player.prototype.setStat = function( stat ) {
+
+	if ( this.canRouteToStat( stat ) ) {
+
+		Entity.prototype.setStat.call( this, stat );
+	}
 };
 
 
 Player.prototype.setBodyRatio = function( rx, ry ) {
 
 	this.body.setSize( this.width / this.scale.x * rx, this.height / this.scale.y * ry );
+};
+
+
+Player.prototype.canRouteToStat = function( stat ) {
+
+	var currentStatRoute = Player.StatRoute[ this.getStat() ];
+
+	var canRouteToStat;
+
+	if ( currentStatRoute ) {
+
+		var targetStatRoute = currentStatRoute[ stat ];
+
+		switch ( targetStatRoute.condition ) {
+			case Player.StatRouteCondition.WHENEVER:
+				canRouteToStat = true;
+				break;
+
+			case Player.StatRouteCondition.NEVER:
+				canRouteToStat = false;
+				break;
+
+			case Player.StatRouteCondition.FRAME_ONLY:
+				canRouteToStat = false; //WIP
+				break;
+
+			case Player.StatRouteCondition.ANIMATION_COMPLETE:
+				canRouteToStat = this.animations.currentAnim.isFinished;
+				break;
+
+			case Player.StatRouteCondition.LAND:
+				canRouteToStat = !this.isInTheAir;
+				break;
+
+			default:
+				break;
+		}
+
+	} else {
+
+		canRouteToStat = true;
+	}
+
+	return canRouteToStat;
 };
 
 
@@ -185,44 +244,53 @@ Player.prototype.jump = function() {
 	this.body.acceleration.x = 0;
 	this.body.velocity.x *= .5;
 
-	this.animations.play( 'stance' );
+	this.animations.play( 'jump' );
 };
 
 
 Player.prototype.pass = function() {
 
-	var canPass = true;
-
-	if ( this.isStat( Stat.DUNKING ) ) {
-		canPass = false;
-	}
-
-	if ( !canPass ) {
+	if ( this.animations.currentAnim.name === 'pass' || !this.hasBall ) {
 		return;
 	}
 
 	this.faceTeammate();
+
+	this.body.acceleration.x = 0;
 
 	var ball = this._gameElements.ball;
 	var teammate = this._gameElements.teammate;
 	var startX = this.x;
 	var startY = this.y - this.height / 2;
 	var targetX = teammate.x;
-	var targetY = teammate.y - teammate.height / 2;
+	var targetY = teammate.y - teammate.height * ( 2 / 3 );
 
-	Events.ballPassed.dispatch( ball, startX, startY, targetX, targetY );
+	Events.ballPassed.dispatch( ball, this, teammate, startX, startY, targetX, targetY );
 
-	this.setStat( this.isInTheAir ? Stat.JUMPING : Stat.STANCE );
+	this.animations.play( this.isInTheAir ? 'pass' : 'pass' );
 };
 
 
 Player.prototype.shoot = function() {
+
+	if ( this.animations.currentAnim.name === 'shoot' || !this.hasBall ) {
+		return;
+	}
 
 	var basket = this._gameElements.opponentBasket;
 	var ball = this._gameElements.ball;
 	var ballRadius = ball.width / 2;
 
 	this.faceOpponentBasket();
+
+	if ( !this.isInTheAir ) {
+
+		this.body.acceleration.x = 0;
+		this.body.velocity.x *= .25;
+
+		var jumpVelocity = this.calculateJumpVelocity( this.config.jump, this.body.velocity.x );
+		this.body.velocity.y = jumpVelocity;
+	}
 
 	var startX = this.x;
 	var startY = this.y - this.height - ballRadius;
@@ -231,13 +299,13 @@ Player.prototype.shoot = function() {
 
 	Events.ballShot.dispatch( ball, startX, startY, targetX, targetY );
 
-	this.setStat( Stat.STANCE );
+	this.animations.play( 'shoot' );
 };
 
 
 Player.prototype.dunk = function() {
 
-	if ( this.isInTheAir ) {
+	if ( this.isInTheAir || !this.hasBall ) {
 		return;
 	}
 
@@ -351,8 +419,13 @@ Player.prototype.update = function() {
 
 Player.prototype.onCollideWithFloor = function() {
 
-	if ( this.isInTheAir &&
-		( this.isStat( Stat.JUMPING ) || this.isStat( Stat.DUNKING ) ) ) {
+	if ( !this.isInTheAir ) {
+		return;
+	}
+
+	this.isInTheAir = false;
+
+	if ( this.canRouteToStat( Stat.STANCE ) ) {
 
 		this.setStat( Stat.STANCE );
 	}
@@ -389,6 +462,12 @@ Player.prototype.onDropped = function( player ) {
 };
 
 
+Player.prototype.onPassed = function( player ) {
+
+	this.hasBall = false;
+};
+
+
 Player.prototype.onShot = function( player, x, y ) {
 
 	this.hasBall = false;
@@ -411,10 +490,188 @@ Player.prototype.onStrategyChanged = function( team, strategy ) {
 };
 
 
+Player.prototype.onAnimationComplete = function( sprite, animation ) {
+
+	if ( !this.isInTheAir ) {
+
+		this.setStat( Stat.STANCE );
+	}
+};
+
+
 Player.Strategy = {
-	OFFENSE: 'offense', // trying to score while this player or his teamate owns the ball
-	DEFENSE: 'defense', // preventing the opponents from scoring
-	COMPETE: 'compete' // competing for the ball control for offensing
+	OFFENSE: 'OFFENSE', // trying to score while this player or his teamate owns the ball
+	DEFENSE: 'DEFENSE', // preventing the opponents from scoring
+	COMPETE: 'COMPETE' // competing for ball possession
+};
+
+
+Player.StatRouteCondition = {
+	WHENEVER: 'WHENEVER',
+	NEVER: 'NEVER',
+	LAND: 'LAND',
+	FRAME_ONLY: 'FRAME_ONLY',
+	ANIMATION_COMPLETE: 'ANIMATION_COMPLETE'
+};
+
+
+Player.StatRoute = {
+	STANCE: {
+		STANCE: {
+			condition: Player.StatRouteCondition.WHENEVER,
+			frames: []
+		},
+		WALKING: {
+			condition: Player.StatRouteCondition.WHENEVER,
+			frames: []
+		},
+		JUMPING: {
+			condition: Player.StatRouteCondition.WHENEVER,
+			frames: []
+		},
+		DUNKING: {
+			condition: Player.StatRouteCondition.WHENEVER,
+			frames: []
+		},
+		SHOOTING: {
+			condition: Player.StatRouteCondition.WHENEVER,
+			frames: []
+		},
+		PASSING: {
+			condition: Player.StatRouteCondition.WHENEVER,
+			frames: []
+		}
+	},
+	WALKING: {
+		STANCE: {
+			condition: Player.StatRouteCondition.WHENEVER,
+			frames: []
+		},
+		WALKING: {
+			condition: Player.StatRouteCondition.WHENEVER,
+			frames: []
+		},
+		JUMPING: {
+			condition: Player.StatRouteCondition.WHENEVER,
+			frames: []
+		},
+		DUNKING: {
+			condition: Player.StatRouteCondition.WHENEVER,
+			frames: []
+		},
+		SHOOTING: {
+			condition: Player.StatRouteCondition.WHENEVER,
+			frames: []
+		},
+		PASSING: {
+			condition: Player.StatRouteCondition.WHENEVER,
+			frames: []
+		}
+	},
+	JUMPING: {
+		STANCE: {
+			condition: Player.StatRouteCondition.LAND,
+			frames: []
+		},
+		WALKING: {
+			condition: Player.StatRouteCondition.NEVER,
+			frames: []
+		},
+		JUMPING: {
+			condition: Player.StatRouteCondition.WHENEVER,
+			frames: []
+		},
+		DUNKING: {
+			condition: Player.StatRouteCondition.NEVER,
+			frames: []
+		},
+		SHOOTING: {
+			condition: Player.StatRouteCondition.WHENEVER,
+			frames: []
+		},
+		PASSING: {
+			condition: Player.StatRouteCondition.WHENEVER,
+			frames: []
+		}
+	},
+	DUNKING: {
+		STANCE: {
+			condition: Player.StatRouteCondition.LAND,
+			frames: []
+		},
+		WALKING: {
+			condition: Player.StatRouteCondition.NEVER,
+			frames: []
+		},
+		JUMPING: {
+			condition: Player.StatRouteCondition.NEVER,
+			frames: []
+		},
+		DUNKING: {
+			condition: Player.StatRouteCondition.WHENEVER,
+			frames: []
+		},
+		SHOOTING: {
+			condition: Player.StatRouteCondition.NEVER,
+			frames: []
+		},
+		PASSING: {
+			condition: Player.StatRouteCondition.NEVER,
+			frames: []
+		},
+	},
+	SHOOTING: {
+		STANCE: {
+			condition: Player.StatRouteCondition.LAND,
+			frames: []
+		},
+		WALKING: {
+			condition: Player.StatRouteCondition.NEVER,
+			frames: []
+		},
+		JUMPING: {
+			condition: Player.StatRouteCondition.NEVER,
+			frames: []
+		},
+		DUNKING: {
+			condition: Player.StatRouteCondition.NEVER,
+			frames: []
+		},
+		SHOOTING: {
+			condition: Player.StatRouteCondition.WHENEVER,
+			frames: []
+		},
+		PASSING: {
+			condition: Player.StatRouteCondition.NEVER,
+			frames: []
+		}
+	},
+	PASSING: {
+		STANCE: {
+			condition: Player.StatRouteCondition.ANIMATION_COMPLETE,
+			frames: []
+		},
+		WALKING: {
+			condition: Player.StatRouteCondition.NEVER,
+			frames: []
+		},
+		JUMPING: {
+			condition: Player.StatRouteCondition.NEVER,
+			frames: []
+		},
+		DUNKING: {
+			condition: Player.StatRouteCondition.NEVER,
+			frames: []
+		},
+		SHOOTING: {
+			condition: Player.StatRouteCondition.NEVER,
+			frames: []
+		},
+		PASSING: {
+			condition: Player.StatRouteCondition.NEVER,
+			frames: []
+		}
+	}
 };
 
 

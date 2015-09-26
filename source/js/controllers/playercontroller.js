@@ -51,6 +51,7 @@ var PlayerController = function( input ) {
 	this._holdingDirection[ Phaser.RIGHT ] = false;
 
 	Events.ballCaught.add( this.onBallCaught, this );
+	Events.ballPassed.add( this.onBallPassed, this );
 };
 
 
@@ -137,6 +138,16 @@ PlayerController.prototype.onBallCaught = function( player ) {
 
 	this.unsetPlayer();
 	this.setPlayer( player );
+};
+
+
+PlayerController.prototype.onBallPassed = function( ball, playerA, playerB ) {
+
+	if ( playerB === this._player1 || playerB === this._player2 ) {
+
+		this.unsetPlayer();
+		this.setPlayer( playerB );
+	}
 };
 
 
@@ -300,6 +311,16 @@ PlayerController.prototype.onDownS = function() {
 	if ( this._player.hasBall ) {
 
 		this._player.setStat( Stat.PASSING );
+
+	} else {
+
+		var anotherPlayer = ( this._player === this._player1 ) ? this._player2 : this._player1;
+
+		if ( anotherPlayer ) {
+
+			this.unsetPlayer( this._player );
+			this.setPlayer( anotherPlayer );
+		}
 	}
 };
 

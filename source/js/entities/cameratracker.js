@@ -1,4 +1,5 @@
 var inherits = require( 'inherits' );
+var Entity = require( 'entities/entity' );
 var Events = require( 'common/events' );
 
 
@@ -34,7 +35,7 @@ CameraTracker.prototype.follow = function( displayObject ) {
 
 		this.updateOffsets();
 
-		var easingDuration = ( this._object.entityType === 'player' ) ? 10 : 5;
+		var easingDuration = ( this._object.entityType === Entity.Type.PLAYER ) ? 10 : 5;
 		this.restartEasing( easingDuration );
 	}
 };
@@ -59,16 +60,16 @@ CameraTracker.prototype.restartEasing = function( duration ) {
 
 CameraTracker.prototype.updateOffsets = function() {
 
-	if ( this._object.entityType === 'ball' ) {
+	if ( this._object.entityType === Entity.Type.BALL ) {
 
 		this._offsetX = 0;
 		this._offsetY = 0;
 
-	} else if ( this._object.entityType === 'player' ) {
+	} else if ( this._object.entityType === Entity.Type.PLAYER ) {
 
 		var direction = ( this._object.facing === Phaser.LEFT ) ? -1 : 1;
 		this._offsetX = Math.round( this.game.width / 5 ) * direction;
-		this._offsetY = -this._object.height / 2;
+		this._offsetY = 0;
 	}
 };
 
@@ -79,13 +80,18 @@ CameraTracker.prototype.update = function() {
 
 		// limit the focus not to exceed half screen size
 		var gameHalfW = this.game.width / 2;
+		var gameHalfH = this.game.height / 2;
+
 		var clampedFocusX = Phaser.Math.clamp( this._object.x + this._offsetX,
 			gameHalfW, this.game.world.width - gameHalfW );
+
+		var clampedFocusY = Phaser.Math.clamp( this._object.y,
+			gameHalfH, this.game.world.height - gameHalfH );
 
 		//this.game.debug.pixel( clampedFocusX + this.game.world.x, 400, '#ff4400', 10 );
 
 		var offsetX = clampedFocusX - this._object.x;
-		var offsetY = this._offsetY;
+		var offsetY = clampedFocusY - this._object.y;
 
 		this.x += ( this._object.x - this.x + offsetX ) * this._ease;
 		this.y += ( this._object.y - this.y + offsetY ) * this._ease;
@@ -105,7 +111,7 @@ CameraTracker.prototype.onBallShot = function( ball ) {
 };
 
 
-CameraTracker.prototype.onBallPassed = function( ball ) {
+CameraTracker.prototype.onBallPassed = function( ball, playerA, playerB ) {
 
 	this.follow( ball );
 };
@@ -113,8 +119,11 @@ CameraTracker.prototype.onBallPassed = function( ball ) {
 
 CameraTracker.prototype.onFacingChanged = function( player, facing ) {
 
-	this.updateOffsets();
-	this.restartEasing( 10 );
+	if ( this._object.entityType === Entity.Type.PLAYER ) {
+
+		this.updateOffsets();
+		this.restartEasing( 10 );
+	}
 };
 
 
