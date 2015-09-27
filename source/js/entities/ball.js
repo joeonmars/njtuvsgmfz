@@ -1,5 +1,6 @@
 var inherits = require( 'inherits' );
 var Events = require( 'common/events' );
+var CourtConfig = require( 'common/court' );
 var Entity = require( 'entities/entity' );
 var Stat = Entity.Stat;
 
@@ -16,12 +17,12 @@ var Ball = function( game ) {
 
 	game.physics.enable( this, Phaser.Physics.P2JS );
 
-	this.width = this.height = game.physics.p2.mpx( 0.25 );
+	this.width = this.height = this.mpx( 0.25 );
 
 	this.body.setCircle( this.width / 2 );
 	this.body.mass = 1;
 	this.body.damping = 0;
-	this.body.angularDamping = .8;
+	this.body.angularDamping = .6;
 
 	this.inputEnabled = true;
 	this.input.enableDrag();
@@ -36,6 +37,9 @@ var Ball = function( game ) {
 
 	this._floorBodyId = null;
 	this._basketBodyIds = null;
+
+	this._foulShot = false;
+	this._rimY = this.game.world.height - this.mpx( CourtConfig.FLOOR_HEIGHT + CourtConfig.RIM_Y );
 
 	// projectile properties
 	this.velocityX = 0;
@@ -178,13 +182,13 @@ Ball.prototype.getPredictedY = function( worldX ) {
 	}
 
 	//http://www.physicsclassroom.com/class/vectors/Lesson-2/Horizontal-and-Vertical-Displacement
-	var displacementX = this.game.physics.p2.pxm( Math.abs( worldX - this.startX ) );
+	var displacementX = this.pxm( Math.abs( worldX - this.startX ) );
 	var t = displacementX / Math.abs( this.velocityX );
 	var g = -9.81;
 
 	var displacementY = this.velocityY * t + .5 * g * Math.pow( t, 2 );
 
-	var worldY = this.game.physics.p2.mpx( this.game.physics.p2.pxm( this.startY ) - displacementY );
+	var worldY = this.mpx( this.pxm( this.startY ) - displacementY );
 
 	return worldY;
 };
@@ -201,6 +205,10 @@ Ball.prototype.update = function() {
 		var pointer = this.input.game.input.activePointer;
 		this.body.reset( pointer.worldX, pointer.worldY );
 	}
+
+	if ( this.y - this.height / 2 < this._rimY ) {
+		this._foulShot = false;
+	}
 };
 
 
@@ -214,13 +222,15 @@ Ball.prototype.onCaught = function( player ) {
 };
 
 
-Ball.prototype.onShot = function( player, startX, startY, targetX, targetY ) {
+Ball.prototype.onShot = function( player, ball, startX, startY, targetX, targetY ) {
 
-	this._player = null;
+	this._player = player;
 
 	this.setPosition( startX, startY );
 
 	this.exists = true;
+
+	this._foulShot = false;
 
 	this.shoot( {
 		x: targetX,
@@ -245,7 +255,7 @@ Ball.prototype.onPassed = function( ball, playerA, playerB, startX, startY, targ
 };
 
 
-Ball.prototype.onBeginContact = function( bodyA, bodyB ) {
+Ball.prototype.onBeginContact = function( bodyA, bodyB, shapeA, shapeB ) {
 
 	var contactBodyId = bodyB.id;
 
@@ -259,6 +269,20 @@ Ball.prototype.onBeginContact = function( bodyA, bodyB ) {
 	} else if ( hitBasket ) {
 
 		this.setStat( Stat.NORMAL );
+	}
+
+	// passing through basket circle sensor
+	if ( shapeA.type === p2.Shape.CIRCLE && shapeB.type === p2.Shape.CIRCLE ) {
+
+		if ( this.body.velocity.y < 0 ) {
+
+			this._foulShot = true;
+
+		} else if ( !this._foulShot ) {
+
+			console.log( "Made basket!" );
+			Events.basketMade.dispatch( this._player );
+		}
 	}
 };
 

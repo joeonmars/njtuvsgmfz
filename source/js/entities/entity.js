@@ -53,12 +53,24 @@ Entity.prototype.setGameElements = function( gameElements ) {
 };
 
 
+Entity.prototype.mpx = function( m ) {
+
+	return this.game.physics.p2.mpx( m );
+};
+
+
+Entity.prototype.pxm = function( px ) {
+
+	return this.game.physics.p2.pxm( px );
+};
+
+
 Entity.prototype.getInitialVelocity = function( startPosition, finalPosition, deg ) {
 
-	var dx = this.game.physics.p2.pxm( Math.abs( finalPosition.x - startPosition.x ) );
+	var dx = this.pxm( Math.abs( finalPosition.x - startPosition.x ) );
 
-	var y0 = this.game.physics.p2.pxm( this.game.world.height - startPosition.y );
-	var y1 = this.game.physics.p2.pxm( this.game.world.height - finalPosition.y );
+	var y0 = this.pxm( this.game.world.height - startPosition.y );
+	var y1 = this.pxm( this.game.world.height - finalPosition.y );
 	var g = 9.81;
 
 	var rad = Phaser.Math.degToRad( deg );

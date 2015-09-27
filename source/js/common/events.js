@@ -3,7 +3,9 @@ var Events = {
 	ballCaught: new Phaser.Signal(),
 	ballShot: new Phaser.Signal(),
 	ballPassed: new Phaser.Signal(),
-	ballDropped: new Phaser.Signal(),
+	ballLost: new Phaser.Signal(),
+
+	basketMade: new Phaser.Signal(),
 
 	facingChanged: new Phaser.Signal(),
 	strategyChanged: new Phaser.Signal(),

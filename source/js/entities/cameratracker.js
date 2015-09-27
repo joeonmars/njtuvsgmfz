@@ -105,7 +105,7 @@ CameraTracker.prototype.onBallCaught = function( player ) {
 };
 
 
-CameraTracker.prototype.onBallShot = function( ball ) {
+CameraTracker.prototype.onBallShot = function( player, ball ) {
 
 	this.follow( ball );
 };

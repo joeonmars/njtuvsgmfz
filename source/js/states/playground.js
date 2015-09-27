@@ -5,6 +5,8 @@ var CameraTracker = require( 'entities/cameratracker' );
 var Player = require( 'entities/player' );
 var PlayerController = require( 'controllers/playercontroller' );
 var PlayerConfig = require( 'common/players' );
+var CourtConfig = require( 'common/court' );
+var Regulation = require( 'controllers/regulation' );
 var Statistics = require( 'controllers/statistics' );
 
 
@@ -39,13 +41,13 @@ Playground.prototype.create = function() {
 	this.physics.p2.gravity.y = gravity;
 	this.physics.arcade.gravity.y = gravity;
 
-	var courtWidth = 26;
-	var extensionWidth = 2;
+	var courtWidth = CourtConfig.COURT_LENGTH;
+	var extensionWidth = CourtConfig.EXTENSION_LENGTH;
 
 	this.worldW = this.physics.p2.mpx( courtWidth + extensionWidth * 2 );
 	this.worldH = this.physics.p2.mpx( 10 );
 
-	this.floorH = this.physics.p2.mpx( .55 );
+	this.floorH = this.physics.p2.mpx( CourtConfig.FLOOR_HEIGHT );
 	this.floorY = this.worldH - this.floorH;
 
 	this.game.world.setBounds( 0, 0, this.worldW, this.worldH );
@@ -72,22 +74,26 @@ Playground.prototype.create = function() {
 	//this.floorP2Body.debug = true;
 
 	// create backboard & basket
-	var backboardHalfH = this.physics.p2.mpx( 1.95 ) / 2;
-	var backboardX = extensionWidth + this.physics.p2.mpx( 1.22 );
-	var backboardY = this.floorY - this.physics.p2.mpx( 2.9 ) - backboardHalfH;
-	this.backboard = this.add.sprite( backboardX, backboardY, 'backboard' );
+	this.backboard = this.add.sprite( 0, 0, 'backboard' );
 	this.physics.p2.enable( this.backboard );
+
+	var backboardX = extensionWidth + this.physics.p2.mpx( CourtConfig.BACKBOARD_X );
+	var backboardY = this.floorY - this.physics.p2.mpx( CourtConfig.BACKBOARD_Y ) - this.backboard.height / 2;
+	this.backboard.body.reset( backboardX, backboardY );
 	this.backboard.body.static = true;
 
 	this.basket = this.add.sprite( 0, 0, 'net' );
 	this.physics.p2.enable( this.basket );
 
 	var basketX = backboardX + 70;
-	var basketY = this.floorY - this.physics.p2.mpx( 3.05 ) - this.basket.height / 2;
+	var basketY = this.floorY - this.physics.p2.mpx( CourtConfig.RIM_Y ) + this.basket.height / 2;
 	this.basket.body.reset( basketX, basketY );
 	this.basket.body.static = true;
 	this.basket.body.clearShapes();
 	this.basket.body.loadPolygon( 'net', 'basketball-net-small' );
+
+	var circle = this.basket.body.addCircle( this.physics.p2.mpx( CourtConfig.RIM_DIAMETER / 4 ), 0, 0 );
+	circle.sensor = true;
 
 	this.basket.inputEnabled = true;
 	this.basket.input.enableDrag();
@@ -165,6 +171,10 @@ Playground.prototype.create = function() {
 	// statistics
 	this.statistics = new Statistics();
 	this.statistics.recordStart( this.player1, this.player2 );
+
+	// regulation
+	this.regulation = new Regulation();
+	this.regulation.enable( Regulation.Rules.SCORING );
 
 	//
 	this.backboardDragOffset = null;
