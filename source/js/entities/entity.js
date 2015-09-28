@@ -10,6 +10,7 @@ var Entity = function( game, key, entityType ) {
 
 	this._gameElements = {};
 	this._stat = null;
+	this._statData = null;
 };
 inherits( Entity, Phaser.Sprite );
 
@@ -21,15 +22,22 @@ Entity.prototype.init = function( x, y, stat ) {
 };
 
 
-Entity.prototype.setStat = function( stat ) {
+Entity.prototype.setStat = function( stat, opt_data ) {
 
 	this._stat = stat;
+	this._statData = opt_data;
 };
 
 
 Entity.prototype.getStat = function() {
 
 	return this._stat;
+};
+
+
+Entity.prototype.getStatData = function() {
+
+	return this._statData;
 };
 
 
@@ -92,6 +100,12 @@ Entity.prototype.getInitialVelocity = function( startPosition, finalPosition, de
 Entity.Type = {
 	PLAYER: 'PLAYER',
 	BALL: 'BALL'
+};
+
+
+Entity.Vertical = {
+	UP: 'UP',
+	DOWN: 'DOWN'
 };
 
 

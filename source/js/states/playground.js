@@ -83,7 +83,7 @@ Playground.prototype.create = function() {
 	this.backboard.body.static = true;
 
 	this.basket = this.add.sprite( 0, 0, 'net' );
-	this.physics.p2.enable( this.basket );
+	this.physics.p2.enable( this.basket, !true );
 
 	var basketX = backboardX + 70;
 	var basketY = this.floorY - this.physics.p2.mpx( CourtConfig.RIM_Y ) + this.basket.height / 2;
@@ -92,7 +92,9 @@ Playground.prototype.create = function() {
 	this.basket.body.clearShapes();
 	this.basket.body.loadPolygon( 'net', 'basketball-net-small' );
 
-	var circle = this.basket.body.addCircle( this.physics.p2.mpx( CourtConfig.RIM_DIAMETER / 4 ), 0, 0 );
+	var circleRadius = this.physics.p2.mpx( CourtConfig.RIM_DIAMETER / 4 );
+	var circleOffsetY = circleRadius;
+	var circle = this.basket.body.addCircle( circleRadius, 0, circleOffsetY );
 	circle.sensor = true;
 
 	this.basket.inputEnabled = true;
@@ -116,12 +118,21 @@ Playground.prototype.create = function() {
 
 	// player 2
 	var playerConfig = PlayerConfig[ 'zyw' ];
-	var playerX = this.game.width + 200;
+	var playerX = this.game.width + 400;
 	var playerY = this.floorY;
 
 	this.player2 = new Player( this.game, playerConfig );
 	this.player2.init( playerX, playerY );
 	this.world.add( this.player2 );
+
+	// player 3
+	var playerConfig = PlayerConfig[ 'yxz' ];
+	var playerX = this.game.width + 100;
+	var playerY = this.floorY;
+
+	this.player3 = new Player( this.game, playerConfig );
+	this.player3.init( playerX, playerY );
+	this.world.add( this.player3 );
 
 	// set game elements to entities
 	this.ball.setGameElements( {
@@ -133,6 +144,7 @@ Playground.prototype.create = function() {
 		floor: this.floor,
 		ball: this.ball,
 		teammate: this.player2,
+		opponents: [ this.player3 ],
 		opponentBasket: this.basket
 	} );
 
@@ -140,6 +152,15 @@ Playground.prototype.create = function() {
 		floor: this.floor,
 		ball: this.ball,
 		teammate: this.player1,
+		opponents: [ this.player3 ],
+		opponentBasket: this.basket
+	} );
+
+	this.player3.setGameElements( {
+		floor: this.floor,
+		ball: this.ball,
+		teammate: null,
+		opponents: [ this.player1, this.player2 ],
 		opponentBasket: this.basket
 	} );
 
@@ -215,6 +236,7 @@ Playground.prototype.render = function() {
 	this.game.debug.start( 20, 20 );
 	this.game.debug.line( 'Player 1 stat: ' + this.player1.getStat() );
 	this.game.debug.line( 'Player 2 stat: ' + this.player2.getStat() );
+	this.game.debug.line( 'Player 3 stat: ' + this.player3.getStat() );
 	this.game.debug.line( 'Ball stat: ' + this.ball.getStat() );
 	//this.game.debug.body( this.player1 );
 	//this.game.debug.body( this.floor );

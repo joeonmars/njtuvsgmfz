@@ -1,3 +1,4 @@
+var Utils = require( 'app/utils' );
 var inherits = require( 'inherits' );
 var Events = require( 'common/events' );
 var Entity = require( 'entities/entity' );
@@ -75,11 +76,11 @@ Player.prototype.init = function( x, y ) {
 };
 
 
-Player.prototype.setStat = function( stat ) {
+Player.prototype.setStat = function( stat, opt_data ) {
 
 	if ( this.canRouteToStat( stat ) ) {
 
-		Entity.prototype.setStat.call( this, stat );
+		Entity.prototype.setStat.call( this, stat, opt_data );
 	}
 };
 
@@ -261,11 +262,60 @@ Player.prototype.pass = function() {
 	var ball = this._gameElements.ball;
 	var teammate = this._gameElements.teammate;
 	var startX = this.x;
-	var startY = this.y - this.height / 2;
+	var startY;
 	var targetX = teammate.x;
-	var targetY = teammate.y - teammate.height * ( 2 / 3 );
+	var targetY;
 
-	Events.ballPassed.dispatch( ball, this, teammate, startX, startY, targetX, targetY );
+	var vertical = this.getStatData().vertical;
+	var angle;
+
+	/* WIP: calculate new targetX, targetY, and angle based on vertical value */
+	/* Currently this is problematic because it needs to calculate the right angle of the projectile across the custom point */
+	switch ( vertical ) {
+		case Entity.Vertical.UP:
+
+			var opponents = this._gameElements.opponents;
+			var tallestOppnent = _.max( opponents, function( opponent ) {
+				return opponent.height;
+			} );
+
+			if ( tallestOppnent && Utils.isWithin( this.x, teammate.x, tallestOppnent.x ) ) {
+
+				startY = this.y - this.height;
+				targetY = teammate.y - teammate.height;
+
+				var minYToPass = tallestOppnent.y - tallestOppnent.height - this.mpx( 1 );
+				var minPositionToPass = new Phaser.Point( tallestOppnent.x, minYToPass );
+				var startPosition = new Phaser.Point( startX, startY );
+
+				this.game.debug.pixel( startPosition.x + this.game.world.x, startPosition.y + this.game.world.y, '#ff4400', 10 );
+				this.game.debug.pixel( minPositionToPass.x + this.game.world.x, minPositionToPass.y + this.game.world.y, '#ff4400', 10 );
+
+				var rad = Phaser.Math.angleBetweenPoints( minPositionToPass, startPosition );
+				angle = Phaser.Math.radToDeg( rad );
+
+				angle = ( angle > 90 ) ? 180 - angle : angle;
+				//angle = Math.max( 30, angle );
+
+				//console.log( angle );
+
+			} else {
+
+				startY = this.y - this.height / 2;
+				targetY = teammate.y - teammate.height * ( 2 / 3 );
+				angle = 30;
+			}
+			break;
+
+		case Entity.Vertical.DOWN:
+			startY = this.y - this.height / 2;
+			targetY = teammate.y - teammate.height * ( 2 / 3 );
+			angle = 10;
+			break;
+	}
+	/* END WIP */
+
+	Events.ballPassed.dispatch( ball, this, teammate, startX, startY, targetX, targetY, angle );
 
 	this.animations.play( this.isInTheAir ? 'pass' : 'pass' );
 };
@@ -364,6 +414,11 @@ Player.prototype.detectBallCollision = function() {
 	}
 
 	if ( this.isStat( Stat.PASSING ) ) {
+		canCollide = false;
+	}
+
+	/* TEMP: disable player-ball collision detection if it's the opponent player */
+	if ( _.contains( this._gameElements.opponents, ball._player ) ) {
 		canCollide = false;
 	}
 

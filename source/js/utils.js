@@ -33,6 +33,14 @@ Utils.clamp = function( value, min, max ) {
 };
 
 
+Utils.isWithin = function( a, b, x ) {
+	var min = a > b ? b : a;
+	var max = a > b ? a : b;
+
+	return x >= min && x <= max;
+};
+
+
 Utils.easeOutCubic = function( t ) {
 	return ( --t ) * t * t + 1;
 };

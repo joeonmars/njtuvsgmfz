@@ -38,7 +38,8 @@ var Ball = function( game ) {
 	this._floorBodyId = null;
 	this._basketBodyIds = null;
 
-	this._foulShot = false;
+	this._reachedRimY = false;
+
 	this._rimY = this.game.world.height - this.mpx( CourtConfig.FLOOR_HEIGHT + CourtConfig.RIM_Y );
 
 	// projectile properties
@@ -54,9 +55,9 @@ Ball.prototype.init = function( x, y ) {
 
 	Entity.prototype.init.call( this, x, y, Stat.NORMAL );
 
-	Events.ballCaught.add( this.onCaught, this );
-	Events.ballShot.add( this.onShot, this );
-	Events.ballPassed.add( this.onPassed, this );
+	Events.ballCaught.add( this.onBallCaught, this );
+	Events.ballShot.add( this.onBallShot, this );
+	Events.ballPassed.add( this.onBallPassed, this );
 
 	this.body.onBeginContact.add( this.onBeginContact, this );
 };
@@ -66,9 +67,9 @@ Ball.prototype.destroy = function() {
 
 	Entity.prototype.destroy.call( this );
 
-	Events.ballCaught.remove( this.onCaught, this );
-	Events.ballShot.remove( this.onShot, this );
-	Events.ballPassed.remove( this.onPassed, this );
+	Events.ballCaught.remove( this.onBallCaught, this );
+	Events.ballShot.remove( this.onBallShot, this );
+	Events.ballPassed.remove( this.onBallPassed, this );
 
 	this.body.onBeginContact.remove( this.onBeginContact, this );
 };
@@ -130,21 +131,9 @@ Ball.prototype.shoot = function( finalPosition ) {
 };
 
 
-Ball.prototype.pass = function( finalPosition ) {
+Ball.prototype.pass = function( finalPosition, angle ) {
 
-	var distanceX = this.position.x - finalPosition.x;
-	var halfDistance = distanceX / 2;
-	var highestPosition = new Phaser.Point( finalPosition.x + halfDistance, finalPosition.y - Math.abs( halfDistance / 2 ) );
-
-	var rad = Phaser.Math.angleBetweenPoints( highestPosition, this.position );
-
-	var deg = Phaser.Math.radToDeg( rad );
-	deg = ( deg > 90 ) ? 180 - deg : deg;
-
-	//console.log( deg );
-	//deg = 45;
-
-	var v = this.getInitialVelocity( this.position, finalPosition, deg );
+	var v = this.getInitialVelocity( this.position, finalPosition, angle );
 
 	if ( !v ) {
 		return;
@@ -153,7 +142,7 @@ Ball.prototype.pass = function( finalPosition ) {
 	// cap ball's max speed to 10m/s
 	v = Math.min( v, 10 );
 
-	rad = Phaser.Math.degToRad( deg );
+	rad = Phaser.Math.degToRad( angle );
 
 	var direction = ( this.position.x > finalPosition.x ) ? 1 : -1;
 
@@ -206,13 +195,13 @@ Ball.prototype.update = function() {
 		this.body.reset( pointer.worldX, pointer.worldY );
 	}
 
-	if ( this.y - this.height / 2 < this._rimY ) {
-		this._foulShot = false;
+	if ( !this._reachedRimY && this.y + this.height / 2 <= this._rimY ) {
+		this._reachedRimY = true;
 	}
 };
 
 
-Ball.prototype.onCaught = function( player ) {
+Ball.prototype.onBallCaught = function( player ) {
 
 	this._player = player;
 
@@ -222,7 +211,7 @@ Ball.prototype.onCaught = function( player ) {
 };
 
 
-Ball.prototype.onShot = function( player, ball, startX, startY, targetX, targetY ) {
+Ball.prototype.onBallShot = function( player, ball, startX, startY, targetX, targetY ) {
 
 	this._player = player;
 
@@ -230,7 +219,7 @@ Ball.prototype.onShot = function( player, ball, startX, startY, targetX, targetY
 
 	this.exists = true;
 
-	this._foulShot = false;
+	this._reachedRimY = false;
 
 	this.shoot( {
 		x: targetX,
@@ -239,10 +228,10 @@ Ball.prototype.onShot = function( player, ball, startX, startY, targetX, targetY
 };
 
 
-Ball.prototype.onPassed = function( ball, playerA, playerB, startX, startY, targetX, targetY ) {
+Ball.prototype.onBallPassed = function( ball, playerA, playerB, startX, startY, targetX, targetY, angle ) {
 
 	//WIP
-	this._player = null;
+	this._player = playerA;
 
 	this.setPosition( startX, startY );
 
@@ -250,8 +239,8 @@ Ball.prototype.onPassed = function( ball, playerA, playerB, startX, startY, targ
 
 	this.pass( {
 		x: targetX,
-		y: targetY
-	} );
+		y: targetY,
+	}, angle );
 };
 
 
@@ -274,11 +263,7 @@ Ball.prototype.onBeginContact = function( bodyA, bodyB, shapeA, shapeB ) {
 	// passing through basket circle sensor
 	if ( shapeA.type === p2.Shape.CIRCLE && shapeB.type === p2.Shape.CIRCLE ) {
 
-		if ( this.body.velocity.y < 0 ) {
-
-			this._foulShot = true;
-
-		} else if ( !this._foulShot ) {
+		if ( this._reachedRimY ) {
 
 			console.log( "Made basket!" );
 			Events.basketMade.dispatch( this._player );

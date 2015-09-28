@@ -17,38 +17,50 @@ var PlayerController = function( input ) {
 	this._keyMappings = {
 		'LEFT': {
 			hold: this.onHoldLeft,
-			down: this.onDownLeft,
-			up: this.onUpLeft
+			down: this.onPressLeft,
+			up: this.onReleaseLeft
 		},
 		'RIGHT': {
 			hold: this.onHoldRight,
-			down: this.onDownRight,
-			up: this.onUpRight
+			down: this.onPressRight,
+			up: this.onReleaseRight
+		},
+		'UP': {
+			hold: this.onHoldUp,
+			down: this.onPressUp,
+			up: this.onReleaseUp
+		},
+		'DOWN': {
+			hold: this.onHoldDown,
+			down: this.onPressDown,
+			up: this.onReleaseDown
 		},
 		'A': {
 			hold: this.onHoldA,
-			down: this.onDownA,
-			up: this.onUpA
+			down: this.onPressA,
+			up: this.onReleaseA
 		},
 		'S': {
 			hold: this.onHoldS,
-			down: this.onDownS,
-			up: this.onUpS
+			down: this.onPressS,
+			up: this.onReleaseS
 		},
 		'D': {
 			hold: this.onHoldD,
-			down: this.onDownD,
-			up: this.onUpD
+			down: this.onPressD,
+			up: this.onReleaseD
 		}
 	};
 
 	this._keys = [];
 
-	this._currentDirection = null;
+	this._hDirection = null;
 
 	this._holdingDirection = {};
 	this._holdingDirection[ Phaser.LEFT ] = false;
 	this._holdingDirection[ Phaser.RIGHT ] = false;
+	this._holdingDirection[ Phaser.UP ] = false;
+	this._holdingDirection[ Phaser.DOWN ] = false;
 
 	Events.ballCaught.add( this.onBallCaught, this );
 	Events.ballPassed.add( this.onBallPassed, this );
@@ -96,9 +108,11 @@ PlayerController.prototype.disableKeys = function() {
 
 	this._keys = [];
 
-	this._currentDirection = null;
+	this._hDirection = null;
 	this._holdingDirection[ Phaser.LEFT ] = false;
 	this._holdingDirection[ Phaser.RIGHT ] = false;
+	this._holdingDirection[ Phaser.UP ] = false;
+	this._holdingDirection[ Phaser.DOWN ] = false;
 };
 
 
@@ -154,7 +168,7 @@ PlayerController.prototype.onBallPassed = function( ball, playerA, playerB ) {
 /**
  * Keyboard LEFT
  */
-PlayerController.prototype.onDownLeft = function() {
+PlayerController.prototype.onPressLeft = function() {
 
 	//console.log( 'down left' );
 
@@ -162,11 +176,11 @@ PlayerController.prototype.onDownLeft = function() {
 		return;
 	}
 
-	this._currentDirection = Phaser.LEFT;
+	this._hDirection = Phaser.LEFT;
 };
 
 
-PlayerController.prototype.onUpLeft = function() {
+PlayerController.prototype.onReleaseLeft = function() {
 
 	//console.log( 'up left' );
 
@@ -179,11 +193,11 @@ PlayerController.prototype.onUpLeft = function() {
 	if ( this._holdingDirection[ Phaser.RIGHT ] ) {
 
 		this._player.face( Phaser.RIGHT );
-		this._currentDirection = Phaser.RIGHT;
+		this._hDirection = Phaser.RIGHT;
 
-	} else if ( this._currentDirection === Phaser.LEFT ) {
+	} else if ( this._hDirection === Phaser.LEFT ) {
 
-		this._currentDirection = null;
+		this._hDirection = null;
 		this._player.setStat( Stat.STANCE );
 	}
 };
@@ -199,7 +213,7 @@ PlayerController.prototype.onHoldLeft = function() {
 		return;
 	}
 
-	if ( this._currentDirection === Phaser.LEFT ) {
+	if ( this._hDirection === Phaser.LEFT ) {
 
 		this._player.face( Phaser.LEFT );
 		this._player.setStat( Stat.WALKING );
@@ -210,7 +224,7 @@ PlayerController.prototype.onHoldLeft = function() {
 /**
  * Keyboard RIGHT
  */
-PlayerController.prototype.onDownRight = function() {
+PlayerController.prototype.onPressRight = function() {
 
 	//console.log( 'down right' );
 
@@ -218,11 +232,11 @@ PlayerController.prototype.onDownRight = function() {
 		return;
 	}
 
-	this._currentDirection = Phaser.RIGHT;
+	this._hDirection = Phaser.RIGHT;
 };
 
 
-PlayerController.prototype.onUpRight = function() {
+PlayerController.prototype.onReleaseRight = function() {
 
 	//console.log( 'up right' );
 
@@ -235,11 +249,11 @@ PlayerController.prototype.onUpRight = function() {
 	if ( this._holdingDirection[ Phaser.LEFT ] ) {
 
 		this._player.face( Phaser.LEFT );
-		this._currentDirection = Phaser.LEFT;
+		this._hDirection = Phaser.LEFT;
 
-	} else if ( this._currentDirection === Phaser.RIGHT ) {
+	} else if ( this._hDirection === Phaser.RIGHT ) {
 
-		this._currentDirection = null;
+		this._hDirection = null;
 		this._player.setStat( Stat.STANCE );
 	}
 };
@@ -255,7 +269,7 @@ PlayerController.prototype.onHoldRight = function() {
 		return;
 	}
 
-	if ( this._currentDirection === Phaser.RIGHT ) {
+	if ( this._hDirection === Phaser.RIGHT ) {
 
 		this._player.face( Phaser.RIGHT );
 		this._player.setStat( Stat.WALKING );
@@ -264,11 +278,51 @@ PlayerController.prototype.onHoldRight = function() {
 
 
 /**
+ * Keyboard UP
+ */
+PlayerController.prototype.onPressUp = function() {
+
+};
+
+
+PlayerController.prototype.onReleaseUp = function() {
+
+	this._holdingDirection[ Phaser.UP ] = false;
+};
+
+
+PlayerController.prototype.onHoldUp = function() {
+
+	this._holdingDirection[ Phaser.UP ] = true;
+};
+
+
+/**
+ * Keyboard Down
+ */
+PlayerController.prototype.onPressDown = function() {
+
+};
+
+
+PlayerController.prototype.onReleaseDown = function() {
+
+	this._holdingDirection[ Phaser.DOWN ] = false;
+};
+
+
+PlayerController.prototype.onHoldDown = function() {
+
+	this._holdingDirection[ Phaser.DOWN ] = true;
+};
+
+
+/**
  * Keyboard A
  * Offensing: quick jump shot (not accelerating and far from basket), slam dunk (accelerating and close to basket)
  * Defensing: jump (block & rebound)
  */
-PlayerController.prototype.onDownA = function() {
+PlayerController.prototype.onPressA = function() {
 
 	//console.log( 'down A' );
 
@@ -287,7 +341,7 @@ PlayerController.prototype.onDownA = function() {
 };
 
 
-PlayerController.prototype.onUpA = function() {
+PlayerController.prototype.onReleaseA = function() {
 
 	//console.log( 'up A' );
 };
@@ -301,16 +355,27 @@ PlayerController.prototype.onHoldA = function() {
 
 /**
  * Keyboard S
- * Offensing: pass ball, used in combination with arrow keys
+ * Offensing: pass ball, combined with up/down keys to make overhead/bounce pass
  * Defensing: switch between defensing players
+ * overhead pass reference: https://www.youtube.com/watch?v=F8ssExT5UKQ
+ * bounce pass reference: https://www.youtube.com/watch?v=ZSmDwt8iQtg
  */
-PlayerController.prototype.onDownS = function() {
+PlayerController.prototype.onPressS = function() {
 
 	//console.log( 'down S' );
 
 	if ( this._player.hasBall ) {
 
-		this._player.setStat( Stat.PASSING );
+		var _vertical = Entity.Vertical.UP;
+
+		if ( this._holdingDirection[ Phaser.DOWN ] ) {
+
+			_vertical = Entity.Vertical.DOWN;
+		}
+
+		this._player.setStat( Stat.PASSING, {
+			vertical: _vertical
+		} );
 
 	} else {
 
@@ -325,7 +390,7 @@ PlayerController.prototype.onDownS = function() {
 };
 
 
-PlayerController.prototype.onUpS = function() {
+PlayerController.prototype.onReleaseS = function() {
 
 	//console.log( 'up S' );
 };
@@ -342,7 +407,7 @@ PlayerController.prototype.onHoldS = function() {
  * Offensing: shoot, tap to pump fake, jump shoot when accelerating
  * Defensing: steal ball, pressed continuously to shove opponents
  */
-PlayerController.prototype.onDownD = function() {
+PlayerController.prototype.onPressD = function() {
 
 	//console.log( 'down D' );
 
@@ -352,7 +417,7 @@ PlayerController.prototype.onDownD = function() {
 };
 
 
-PlayerController.prototype.onUpD = function() {
+PlayerController.prototype.onReleaseD = function() {
 
 	//console.log( 'up D' );
 };
