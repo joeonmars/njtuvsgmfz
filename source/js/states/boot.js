@@ -1,5 +1,6 @@
 var inherits = require( 'inherits' );
 var PlaygroundState = require( 'states/playground' );
+var TestState = require( 'states/test' );
 
 
 var Boot = function() {
@@ -47,6 +48,7 @@ Boot.prototype.init = function() {
 
 	//
 	this.state.add( 'Playground', PlaygroundState );
+	this.state.add( 'Test', TestState );
 	this.state.start( 'Playground', true );
 };
 

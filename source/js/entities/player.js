@@ -287,17 +287,21 @@ Player.prototype.pass = function() {
 				var minYToPass = tallestOppnent.y - tallestOppnent.height - this.mpx( 1 );
 				var minPositionToPass = new Phaser.Point( tallestOppnent.x, minYToPass );
 				var startPosition = new Phaser.Point( startX, startY );
+				var targetPosition = new Phaser.Point( targetX, targetY );
+
+				var peak = this.getPeakOfProjectile( startPosition, minPositionToPass, targetPosition );
 
 				this.game.debug.pixel( startPosition.x + this.game.world.x, startPosition.y + this.game.world.y, '#ff4400', 10 );
 				this.game.debug.pixel( minPositionToPass.x + this.game.world.x, minPositionToPass.y + this.game.world.y, '#ff4400', 10 );
+				this.game.debug.pixel( peak.x + this.game.world.x, peak.y + this.game.world.y, '#00ff00', 10 );
 
-				var rad = Phaser.Math.angleBetweenPoints( minPositionToPass, startPosition );
+				var rad = Phaser.Math.angleBetweenPoints( peak, startPosition );
 				angle = Phaser.Math.radToDeg( rad );
 
 				angle = ( angle > 90 ) ? 180 - angle : angle;
-				//angle = Math.max( 30, angle );
+				angle = Math.max( 30, angle );
 
-				//console.log( angle );
+				console.log( angle );
 
 			} else {
 
