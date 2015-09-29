@@ -269,8 +269,7 @@ Player.prototype.pass = function() {
 	var vertical = this.getStatData().vertical;
 	var angle;
 
-	/* WIP: calculate new targetX, targetY, and angle based on vertical value */
-	/* Currently this is problematic because it needs to calculate the right angle of the projectile across the custom point */
+	/* WIP */
 	switch ( vertical ) {
 		case Entity.Vertical.UP:
 
@@ -291,11 +290,17 @@ Player.prototype.pass = function() {
 
 				var peak = this.getPeakOfProjectile( startPosition, minPositionToPass, targetPosition );
 
-				this.game.debug.pixel( startPosition.x + this.game.world.x, startPosition.y + this.game.world.y, '#ff4400', 10 );
 				this.game.debug.pixel( minPositionToPass.x + this.game.world.x, minPositionToPass.y + this.game.world.y, '#ff4400', 10 );
 				this.game.debug.pixel( peak.x + this.game.world.x, peak.y + this.game.world.y, '#00ff00', 10 );
 
-				var rad = Phaser.Math.angleBetweenPoints( peak, startPosition );
+				//http://answers.unity3d.com/questions/841870/how-to-calculate-the-angle-of-a-trajectory-to-hit.html
+				var g = 9.81;
+				var peakHeight = this.pxm( Math.abs( peak.y - startY ) );
+				var vy = Math.sqrt( 2 * g * peakHeight );
+				var t = Math.sqrt( 2 * Math.abs( peakHeight ) / g ) + Math.sqrt( 2 * peakHeight / g );
+				var vx = this.pxm( Math.abs( targetX - startX ) ) / t;
+
+				var rad = Math.atan2( vy, vx );
 				angle = Phaser.Math.radToDeg( rad );
 
 				angle = ( angle > 90 ) ? 180 - angle : angle;
